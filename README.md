@@ -1,4 +1,4 @@
-# @debugtalk/opencode-dap
+# opencode-dap
 
 DAP (Debug Adapter Protocol) client for OpenCode — ported from [oh-my-pi](https://github.com/anomalyco/oh-my-pi).
 
