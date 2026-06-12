@@ -2,9 +2,21 @@
 
 DAP (Debug Adapter Protocol) client for OpenCode — ported from [oh-my-pi](https://github.com/anomalyco/oh-my-pi).
 
-Lets AI coding agents debug programs via the Debug Adapter Protocol — supports 14 debug adapters covering ~18 languages. Works as a standalone Bun/Node library and as an OpenCode custom tool.
+Lets AI coding agents debug programs via the Debug Adapter Protocol — supports 14 debug adapters covering ~18 languages. Drop it into OpenCode with a single `plugin` entry or use it as a standalone Bun/Node library.
 
 ## Quick Start
+
+### Plugin (recommended)
+
+Add a single line to your project's `opencode.json`:
+
+```json
+{ "plugin": ["@debugtalk/opencode-dap"] }
+```
+
+Restart OpenCode. The `debug` tool is available with all 30 actions and auto-cleanup on session idle.
+
+### File-based (for customization)
 
 ```bash
 # 1. Install a debug adapter for your language
@@ -12,13 +24,11 @@ pip install debugpy          # Python
 brew install llvm            # macOS: C/C++/Rust/Swift (lldb-dap)
 go install github.com/go-delve/delve/cmd/dlv@latest  # Go
 
-# 2. Install this package in your opencode project
-cd your-project
+# 2. Add the package to .opencode/package.json
 mkdir -p .opencode
 echo '{ "dependencies": { "@debugtalk/opencode-dap": "^0.1.0" } }' > .opencode/package.json
-bun install --cwd .opencode
 
-# 3. Copy the template files into your project's .opencode/ directory
+# 3. Copy the template files
 cp -r node_modules/@debugtalk/opencode-dap/templates/* .opencode/
 
 # 4. Start opencode
@@ -55,82 +65,45 @@ await mgr.terminate();
 
 ## opencode Integration
 
-The package ships with ready-to-use templates in `templates/`. Copy them into your project's `.opencode/` directory:
+Two ways to use the package in OpenCode:
+
+### Plugin (recommended)
+
+Add to `opencode.json`:
+
+```json
+{ "plugin": ["@debugtalk/opencode-dap"] }
+```
+
+OpenCode installs the package automatically and registers the `debug` tool. Auto-cleanup terminates debug sessions on session idle/deleted.
+
+### File-based
+
+For users who want to customize the tool or lifecycle behavior, copy the template files:
 
 ```bash
 cp -r node_modules/@debugtalk/opencode-dap/templates/* .opencode/
 ```
 
-This creates three files:
-
-### `templates/shared/debug-session.ts`
-
-Shared singleton for the DAP session manager. Copy to `.opencode/shared/debug-session.ts`.
+This creates three files that import from the package:
 
 ```ts
+// .opencode/shared/debug-session.ts — singleton
 import { DapSessionManager } from "@debugtalk/opencode-dap";
 export const dapSessionManager = new DapSessionManager();
 ```
 
-### `templates/tools/debug.ts`
-
-The full custom tool definition with all 30 actions (~500 lines). Copy to `.opencode/tools/debug.ts`.
-
-A minimal version:
-
 ```ts
-import { tool } from "@opencode-ai/plugin";
-import { selectLaunchAdapter } from "@debugtalk/opencode-dap";
-import { dapSessionManager } from "../shared/debug-session";
-
-export default tool({
-  description: "Debug a program using DAP (Debug Adapter Protocol).",
-  args: {
-    action: tool.schema.enum(["launch", "continue", "evaluate", "terminate"]),
-    program: tool.schema.string().optional(),
-    expression: tool.schema.string().optional(),
-  },
-  async execute(args) {
-    const cwd = process.cwd();
-    switch (args.action) {
-      case "launch": {
-        const adapter = selectLaunchAdapter(args.program!, cwd);
-        const snap = await dapSessionManager.launch({ adapter, program: args.program!, cwd });
-        return `Launched. Status: ${snap.status}`;
-      }
-      case "evaluate": {
-        const result = await dapSessionManager.evaluate(args.expression!, "repl", undefined);
-        return `${args.expression} = ${result.evaluation.result}`;
-      }
-      case "continue": {
-        const outcome = await dapSessionManager.continue();
-        return `Continue result: ${outcome.state}`;
-      }
-      case "terminate": {
-        await dapSessionManager.terminate();
-        return "Terminated.";
-      }
-    }
-  },
-});
+// .opencode/tools/debug.ts — the tool
+export { debugTool as default } from "@debugtalk/opencode-dap/plugin";
 ```
 
-### `templates/plugins/debug-lifecycle.ts`
-
-Auto-cleanup plugin. Copy to `.opencode/plugins/debug-lifecycle.ts`.
-
 ```ts
-import type { Plugin } from "@opencode-ai/plugin";
-import { dapSessionManager } from "../shared/debug-session";
-
-export const DebugLifecycle: Plugin = async () => ({
-  event: async ({ event }) => {
-    if (event?.type === "session.idle" || event?.type === "session.deleted") {
-      try { await dapSessionManager.terminate(undefined, 5_000); } catch {}
-    }
-  },
-});
+// .opencode/plugins/debug-lifecycle.ts — lifecycle hooks
+export { opencodeDapPlugin as DebugLifecycle } from "@debugtalk/opencode-dap/plugin";
 ```
+
+For full control, import `DapSessionManager`, `selectLaunchAdapter`, etc. directly from `@debugtalk/opencode-dap` and build your own tool definition. See the [full tool source](https://github.com/debugtalk/opencode-dap/blob/main/src/plugin.ts) for reference.
 
 ## Supported Adapters
 
@@ -239,8 +212,8 @@ Stateful orchestrator. Holds a single active session at a time.
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│ opencode custom tool (tools/debug.ts)               │
-│   tool() schema → execute() → formatted string      │
+│ opencode plugin (opencode.json)                     │
+│   "plugin": ["@debugtalk/opencode-dap"]             │
 └──────────────────┬──────────────────────────────────┘
                    │
 ┌──────────────────▼──────────────────────────────────┐
