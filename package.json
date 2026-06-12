@@ -1,0 +1,15 @@
+{
+  "name": "@debugtalk/opencode-debug",
+  "version": "0.1.0",
+  "description": "DAP (Debug Adapter Protocol) client for OpenCode AI coding agent",
+  "type": "module",
+  "main": "src/index.ts",
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "check": "bun --check src/client.ts src/config.ts src/session.ts src/types.ts src/non-interactive-env.ts src/index.ts"
+  },
+  "keywords": ["opencode", "debug", "dap", "debug-adapter-protocol", "coding-agent"],
+  "license": "MIT"
+}
