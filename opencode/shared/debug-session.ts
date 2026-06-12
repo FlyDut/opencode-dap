@@ -1,3 +1,3 @@
-import { DapSessionManager } from "@debugtalk/opencode-debug";
+import { DapSessionManager } from "@debugtalk/opencode-dap";
 
 export const dapSessionManager = new DapSessionManager();

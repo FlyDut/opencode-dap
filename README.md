@@ -1,4 +1,4 @@
-# @debugtalk/opencode-debug
+# @debugtalk/opencode-dap
 
 DAP (Debug Adapter Protocol) client for OpenCode — ported from [oh-my-pi](https://github.com/anomalyco/oh-my-pi).
 
@@ -15,7 +15,7 @@ go install github.com/go-delve/delve/cmd/dlv@latest  # Go
 # 2. Install this package in your opencode project
 cd your-project
 mkdir -p .opencode
-echo '{ "dependencies": { "@debugtalk/opencode-debug": "^0.1.0" } }' > .opencode/package.json
+echo '{ "dependencies": { "@debugtalk/opencode-dap": "^0.1.0" } }' > .opencode/package.json
 bun install --cwd .opencode
 
 # 3. Create the tool and plugin files (see opencode Integration below)
@@ -25,7 +25,7 @@ bun install --cwd .opencode
 ## Standalone API
 
 ```ts
-import { DapSessionManager, selectLaunchAdapter } from "@debugtalk/opencode-debug";
+import { DapSessionManager, selectLaunchAdapter } from "@debugtalk/opencode-dap";
 
 const cwd = process.cwd();
 const adapter = selectLaunchAdapter("src/main.py", cwd);
@@ -60,19 +60,19 @@ The package is designed to work as an OpenCode custom tool. Two files are needed
 Shared singleton for the DAP session manager:
 
 ```ts
-import { DapSessionManager } from "@debugtalk/opencode-debug";
+import { DapSessionManager } from "@debugtalk/opencode-dap";
 export const dapSessionManager = new DapSessionManager();
 ```
 
 ### `.opencode/tools/debug.ts`
 
-The custom tool definition. See the [bundled tool template](https://github.com/debugtalk/opencode-debug/blob/main/opencode/tools/debug.ts) for the full implementation (~500 lines with all 30 actions).
+The custom tool definition. See the [bundled tool template](https://github.com/debugtalk/opencode-dap/blob/main/opencode/tools/debug.ts) for the full implementation (~500 lines with all 30 actions).
 
 A minimal version:
 
 ```ts
 import { tool } from "@opencode-ai/plugin";
-import { selectLaunchAdapter } from "@debugtalk/opencode-debug";
+import { selectLaunchAdapter } from "@debugtalk/opencode-dap";
 import { dapSessionManager } from "../shared/debug-session";
 
 export default tool({
@@ -281,7 +281,7 @@ Messages are typed as `request`, `response`, or `event`. Requests are matched to
 Install the appropriate adapter for your language (see the [Supported Adapters](#supported-adapters) table). You can check which adapters are available on your system:
 
 ```ts
-import { getAvailableAdapters } from "@debugtalk/opencode-debug";
+import { getAvailableAdapters } from "@debugtalk/opencode-dap";
 console.log(getAvailableAdapters(process.cwd()).map(a => a.name));
 ```
 

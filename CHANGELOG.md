@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 ### Added
-- Initial release of `@debugtalk/opencode-debug`, ported from oh-my-pi's DAP implementation
+- Initial release of `@debugtalk/opencode-dap`, ported from oh-my-pi's DAP implementation
 - Full DAP wire protocol client with stdio and socket transport
 - Session manager with launch/attach lifecycle, breakpoint management, step/continue/pause, variable inspection, memory read/write, and disassembly
 - Adapter resolution with auto-selection by file extension and project root markers

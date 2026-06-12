@@ -6,7 +6,7 @@ import {
 	selectAttachAdapter,
 	resolveLaunchOverrides,
 	getAvailableAdapters,
-} from "@debugtalk/opencode-debug";
+} from "@debugtalk/opencode-dap";
 import type {
 	DapResolvedAdapter,
 	DapSessionSummary,
@@ -24,7 +24,7 @@ import type {
 	DapModule,
 	DapSource,
 	DapContinueOutcome,
-} from "@debugtalk/opencode-debug";
+} from "@debugtalk/opencode-dap";
 import { dapSessionManager } from "../shared/debug-session";
 
 type LaunchProgramKind = "file" | "directory" | "missing";

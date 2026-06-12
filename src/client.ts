@@ -49,7 +49,7 @@ function isEnoent(error: unknown): boolean {
 function logError(context: string, detail: Record<string, unknown>): void {
 	try {
 		console.error(
-			JSON.stringify({ service: "opencode-debug", level: "error", context, ...detail }),
+			JSON.stringify({ service: "opencode-dap", level: "error", context, ...detail }),
 		);
 	} catch {
 		// best-effort
