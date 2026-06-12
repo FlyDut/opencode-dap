@@ -11,8 +11,7 @@
     "./config": "./src/config.ts"
   },
   "files": [
-    "src",
-    "templates"
+    "src"
   ],
   "scripts": {
     "check": "tsc --noEmit",
