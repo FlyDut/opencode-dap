@@ -58,6 +58,8 @@ function resolveCommand(command: string, cwd: string): string | null {
 		{ markers: ["pyproject.toml", "requirements.txt", "setup.py", "Pipfile"], binDir: ".venv/bin" },
 		{ markers: ["pyproject.toml", "requirements.txt", "setup.py", "Pipfile"], binDir: "venv/bin" },
 		{ markers: ["pyproject.toml", "requirements.txt", "setup.py", "Pipfile"], binDir: ".env/bin" },
+		// A venv exists even without explicit Python markers — use the directory itself as the signal.
+		{ markers: [".venv"], binDir: ".venv/bin" },
 		{ markers: ["Gemfile", "Gemfile.lock"], binDir: "vendor/bundle/bin" },
 		{ markers: ["Gemfile", "Gemfile.lock"], binDir: "bin" },
 		{ markers: ["go.mod", "go.sum"], binDir: "bin" },
