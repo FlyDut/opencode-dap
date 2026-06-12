@@ -2,7 +2,7 @@
 
 DAP (Debug Adapter Protocol) client for OpenCode — ported from [oh-my-pi](https://github.com/anomalyco/oh-my-pi).
 
-Lets AI coding agents debug programs across 14 languages via the Debug Adapter Protocol. Works as a standalone Bun/Node library and as an OpenCode custom tool.
+Lets AI coding agents debug programs via the Debug Adapter Protocol — supports 14 debug adapters covering ~18 languages. Works as a standalone Bun/Node library and as an OpenCode custom tool.
 
 ## Quick Start
 
@@ -165,21 +165,24 @@ Stateful orchestrator. Holds a single active session at a time.
 | Method | Description |
 |---|---|
 | `continue(signal?, timeoutMs?)` | Continue execution. Returns `DapContinueOutcome` with state. |
-| `stepIn(signal?, timeoutMs?)` | Step into. |
-| `stepOut(signal?, timeoutMs?)` | Step out. |
-| `stepOver(signal?, timeoutMs?)` | Step over (next). |
 | `pause(signal?, timeoutMs?)` | Pause execution. |
+| `stepIn(signal?, timeoutMs?)` | Step into. Returns `DapContinueOutcome`. |
+| `stepOut(signal?, timeoutMs?)` | Step out. Returns `DapContinueOutcome`. |
+| `stepOver(signal?, timeoutMs?)` | Step over (next). Returns `DapContinueOutcome`. |
 
 **Breakpoints:**
 
 | Method | Description |
 |---|---|
-| `setBreakpoint(file, line, condition?)` | Set a source breakpoint. |
-| `removeBreakpoint(file, line)` | Remove a source breakpoint. |
-| `setFunctionBreakpoint(name, condition?)` | Set a function breakpoint. |
-| `removeFunctionBreakpoint(name)` | Remove a function breakpoint. |
-| `setInstructionBreakpoint(ref, offset?, condition?, hitCondition?)` | Set an instruction breakpoint. |
-| `setDataBreakpoint(dataId, accessType?, condition?, hitCondition?)` | Set a data breakpoint. |
+| `setBreakpoint(file, line, condition?, signal?, timeoutMs?)` | Set a source breakpoint. |
+| `removeBreakpoint(file, line, signal?, timeoutMs?)` | Remove a source breakpoint. |
+| `setFunctionBreakpoint(name, condition?, signal?, timeoutMs?)` | Set a function breakpoint. |
+| `removeFunctionBreakpoint(name, signal?, timeoutMs?)` | Remove a function breakpoint. |
+| `setInstructionBreakpoint(instructionReference, offset?, condition?, hitCondition?, signal?, timeoutMs?)` | Set an instruction breakpoint. |
+| `removeInstructionBreakpoint(instructionReference, offset?, signal?, timeoutMs?)` | Remove an instruction breakpoint. |
+| `dataBreakpointInfo(name, variablesReference?, frameId?, signal?, timeoutMs?)` | Get data breakpoint info for a variable. |
+| `setDataBreakpoint(dataId, accessType?, condition?, hitCondition?, signal?, timeoutMs?)` | Set a data breakpoint. |
+| `removeDataBreakpoint(dataId, signal?, timeoutMs?)` | Remove a data breakpoint. |
 
 **State inspection:**
 
@@ -187,7 +190,7 @@ Stateful orchestrator. Holds a single active session at a time.
 |---|---|
 | `stackTrace(frameCount?, signal?, timeoutMs?)` | Get stack frames. |
 | `scopes(frameId?, signal?, timeoutMs?)` | Get scopes for a frame. |
-| `variables(variableReference, signal?, timeoutMs?)` | Get variables in a scope. |
+| `variables(variablesReference, signal?, timeoutMs?)` | Get variables in a scope. |
 | `evaluate(expression, context, frameId?, signal?, timeoutMs?)` | Evaluate an expression. |
 | `threads(signal?, timeoutMs?)` | List threads. |
 | `getOutput(limitBytes?)` | Get captured stdout/stderr. |
@@ -196,22 +199,22 @@ Stateful orchestrator. Holds a single active session at a time.
 
 | Method | Description |
 |---|---|
-| `disassemble(memRef, count, offset?, instructionOffset?, resolveSymbols?)` | Disassemble instructions. |
-| `readMemory(memRef, count, offset?)` | Read memory. |
-| `writeMemory(memRef, data, offset?, allowPartial?)` | Write memory. |
-| `modules(startModule?, moduleCount?)` | List modules. |
+| `disassemble(memoryReference, instructionCount, offset?, instructionOffset?, resolveSymbols?, signal?, timeoutMs?)` | Disassemble instructions. |
+| `readMemory(memoryReference, count, offset?, signal?, timeoutMs?)` | Read memory. |
+| `writeMemory(memoryReference, data, offset?, allowPartial?, signal?, timeoutMs?)` | Write memory. |
+| `modules(startModule?, moduleCount?, signal?, timeoutMs?)` | List modules. |
 | `loadedSources(signal?, timeoutMs?)` | List loaded sources. |
-| `customRequest(command, args?)` | Send an arbitrary DAP request. |
+| `customRequest(command, args?, signal?, timeoutMs?)` | Send an arbitrary DAP request. |
 
 ### Adapter Resolution
 
 | Function | Description |
 |---|---|
 | `getAvailableAdapters(cwd)` | List all adapters resolvable from `$PATH` or local bins. |
-| `resolveAdapter(name, cwd)` | Resolve a specific adapter by name. |
-| `selectLaunchAdapter(program, cwd, name?, kind?)` | Auto-select the best adapter for a program. |
-| `selectAttachAdapter(cwd, name?, port?)` | Auto-select the best adapter for attach. |
-| `resolveLaunchOverrides(adapter, program, kind)` | Get adapter-specific launch arguments (e.g., dlv mode). |
+| `resolveAdapter(adapterName, cwd)` | Resolve a specific adapter by name. |
+| `selectLaunchAdapter(program, cwd, adapterName?, programKind?)` | Auto-select the best adapter for a program. |
+| `selectAttachAdapter(cwd, adapterName?, port?)` | Auto-select the best adapter for attach. |
+| `resolveLaunchOverrides(adapter, program, programKind)` | Get adapter-specific launch arguments (e.g., dlv mode). |
 | `getAdapterConfigs()` | Get the raw adapter config map from the bundled catalog. |
 
 ### Key Types
