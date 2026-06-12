@@ -110,13 +110,23 @@ function toErrorMessage(value: unknown): string {
 }
 
 function logError(context: string, detail: Record<string, unknown>): void {
-	try {
-		console.error(
-			JSON.stringify({ service: "opencode-dap", level: "error", context, ...detail }),
-		);
-	} catch {
-		// best-effort
-	}
+  try {
+    console.error(
+      JSON.stringify({ service: "opencode-dap", level: "error", context, ...detail }),
+    );
+  } catch {
+    // best-effort
+  }
+}
+
+function logWarn(context: string, detail: Record<string, unknown>): void {
+  try {
+    console.error(
+      JSON.stringify({ service: "opencode-dap", level: "warn", context, ...detail }),
+    );
+  } catch {
+    // best-effort
+  }
 }
 
 /**
@@ -1104,6 +1114,7 @@ export class DapSessionManager {
 			const proc = Bun.spawn(args.args, {
 				cwd: args.cwd ?? session.cwd,
 				stdin: "pipe",
+				detached: true,
 				env: {
 					...Bun.env,
 					...NON_INTERACTIVE_ENV,
@@ -1118,7 +1129,7 @@ export class DapSessionManager {
 			const request = startArgs.request === "attach" ? "attach" : "launch";
 			const configuration =
 				startArgs.configuration && typeof startArgs.configuration === "object" ? startArgs.configuration : {};
-			logError("Adapter requested child debug session", {
+			logWarn("Adapter requested child debug session", {
 				adapter: session.adapter.name,
 				sessionId: session.id,
 				request,
@@ -1230,7 +1241,7 @@ export class DapSessionManager {
 			session.lastStackFrames = response?.stackFrames ?? [];
 			this.#applyTopFrame(session, session.lastStackFrames[0]);
 		} catch (error) {
-			logError("Failed to capture stopped frame", {
+			logWarn("Failed to capture stopped frame", {
 				sessionId: session.id,
 				error: toErrorMessage(error),
 			});

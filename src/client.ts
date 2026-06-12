@@ -56,6 +56,16 @@ function logError(context: string, detail: Record<string, unknown>): void {
 	}
 }
 
+function logWarn(context: string, detail: Record<string, unknown>): void {
+	try {
+		console.error(
+			JSON.stringify({ service: "opencode-dap", level: "warn", context, ...detail }),
+		);
+	} catch {
+		// best-effort
+	}
+}
+
 // ---------------------------------------------------------------------------
 // Chunk-based byte-buffer helpers for the DAP framing reader
 // ---------------------------------------------------------------------------
@@ -523,7 +533,7 @@ export class DapClient {
 		try {
 			this.proc.kill();
 		} catch (error) {
-			logError("Failed to kill DAP adapter", {
+			logWarn("Failed to kill DAP adapter", {
 				adapter: this.adapter.name,
 				error: toErrorMessage(error),
 			});
@@ -562,7 +572,7 @@ export class DapClient {
 					const headerText = MESSAGE_DECODER.decode(copyChunkRange(pendingChunks, 0, headerEnd));
 					const contentLengthMatch = headerText.match(/Content-Length: (\d+)/i);
 					if (!contentLengthMatch) {
-						logError("DAP framing resync: header block without Content-Length", {
+						logWarn("DAP framing resync: header block without Content-Length", {
 							adapter: this.adapter.name,
 							header: headerText.slice(0, 200),
 						});
@@ -591,7 +601,7 @@ export class DapClient {
 							await this.#handleAdapterRequest(message);
 						}
 					} catch (error) {
-						logError("DAP message handling failed", {
+						logWarn("DAP message handling failed", {
 							adapter: this.adapter.name,
 							error: toErrorMessage(error),
 						});
@@ -637,7 +647,7 @@ export class DapClient {
 			try {
 				await handler(message.body, message);
 			} catch (error) {
-				logError("DAP event handler failed", {
+				logWarn("DAP event handler failed", {
 					adapter: this.adapter.name,
 					event: message.event,
 					error: toErrorMessage(error),
@@ -682,7 +692,7 @@ export class DapClient {
 				errorMessage,
 			);
 		} catch (error) {
-			logError("Failed to answer DAP adapter request", {
+			logWarn("Failed to answer DAP adapter request", {
 				adapter: this.adapter.name,
 				command: message.command,
 				error: toErrorMessage(error),

@@ -43,18 +43,42 @@ function getManager(): DapSessionManager {
 }
 
 // ---------------------------------------------------------------------------
+// Path helpers
+// ---------------------------------------------------------------------------
+
+function resolveToCwd(target: string, cwd: string): string {
+  if (path.isAbsolute(target)) return target;
+  return path.resolve(cwd, target);
+}
+
+function formatPathRelativeToCwd(target: string, cwd: string): string {
+  const rel = path.relative(cwd, target);
+  if (!rel.startsWith("..") && !path.isAbsolute(rel)) return rel;
+  return target;
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 type ProgramKind = LaunchProgramKind;
+
+function isEnoent(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    "code" in error &&
+    (error as NodeJS.ErrnoException).code === "ENOENT"
+  );
+}
 
 async function classifyLaunchProgram(program: string): Promise<ProgramKind> {
   try {
     const stat = await fs.stat(program);
     if (stat.isDirectory()) return "directory";
     return "file";
-  } catch {
-    return "missing";
+  } catch (error) {
+    if (isEnoent(error)) return "missing";
+    throw error;
   }
 }
 
@@ -68,9 +92,10 @@ async function validateLaunchProgram(
     throw new Error(`Launch program not found: ${path.resolve(cwd, program)}`);
   }
   if (kind === "directory" && !adapter.acceptsDirectoryProgram) {
+    const displayPath = formatPathRelativeToCwd(program, cwd);
     throw new Error(
-      `Adapter '${adapter.name}' does not accept a directory as the launch program. ` +
-        `Use a source file or compiled binary instead.`,
+      `launch program resolves to a directory: ${displayPath}. ` +
+        `Pass an executable file path, or for Python use adapter "debugpy" with program set to the .py file.`,
     );
   }
 }
@@ -90,6 +115,20 @@ function requireCapability(capability: string, label: string): void {
   if (!capabilities || !(capabilities as Record<string, unknown>)[capability]) {
     throw new Error(`This debug adapter does not support ${label}.`);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Timeout clamping
+// ---------------------------------------------------------------------------
+
+const DEBUG_TIMEOUT_MIN = 5;
+const DEBUG_TIMEOUT_MAX = 300;
+const DEBUG_TIMEOUT_DEFAULT = 30;
+
+function clampTimeout(seconds: unknown): number {
+  const n = typeof seconds === "number" ? seconds : Number(seconds);
+  if (!Number.isFinite(n) || n <= 0) return DEBUG_TIMEOUT_DEFAULT;
+  return Math.max(DEBUG_TIMEOUT_MIN, Math.min(DEBUG_TIMEOUT_MAX, n));
 }
 
 // ---------------------------------------------------------------------------
@@ -389,9 +428,11 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
 
   async execute(args, ctx) {
     const mgr = getManager();
-    const timeout = typeof args.timeout === "number" && args.timeout > 0 ? args.timeout : 30;
+    const timeout = clampTimeout(args.timeout);
     const timeoutMs = timeout * 1000;
-    const cwd = typeof args.cwd === "string" && args.cwd ? args.cwd : ctx.directory;
+    const cwd = typeof args.cwd === "string" && args.cwd
+      ? resolveToCwd(args.cwd, ctx.directory)
+      : ctx.directory;
 
     switch (args.action) {
       // ── Session management ──────────────────────────────
@@ -399,9 +440,10 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
         if (typeof args.program !== "string" || !args.program) {
           throw new Error("'program' is required for launch. Provide the path to the program or script.");
         }
-        const programKind = await classifyLaunchProgram(args.program);
+        const program = resolveToCwd(args.program, cwd);
+        const programKind = await classifyLaunchProgram(program);
         const adapter = selectLaunchAdapter(
-          args.program,
+          program,
           cwd,
           typeof args.adapter === "string" ? args.adapter : undefined,
           programKind,
@@ -415,11 +457,11 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
               `Install a debug adapter or specify one explicitly with 'adapter'.`,
           );
         }
-        await validateLaunchProgram(args.program, cwd, programKind, adapter);
-        const extraLaunchArgs = resolveLaunchOverrides(adapter, args.program, programKind);
+        await validateLaunchProgram(program, cwd, programKind, adapter);
+        const extraLaunchArgs = resolveLaunchOverrides(adapter, program, programKind);
         const programArgs = Array.isArray(args.args) ? (args.args as string[]) : undefined;
         const snapshot = await mgr.launch(
-          { adapter, program: args.program, args: programArgs, cwd, extraLaunchArguments: extraLaunchArgs },
+          { adapter, program, args: programArgs, cwd, extraLaunchArguments: extraLaunchArgs },
           undefined,
           timeoutMs,
         );
@@ -474,8 +516,9 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
             "'file' and 'line' are required for file breakpoints (or use 'function' for function breakpoints).",
           );
         }
+        const breakpointFile = resolveToCwd(args.file, cwd);
         const result = await mgr.setBreakpoint(
-          args.file,
+          breakpointFile,
           args.line,
           typeof args.condition === "string" ? args.condition : undefined,
           undefined,
@@ -493,7 +536,8 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
             "'file' and 'line' are required for file breakpoints (or use 'function' for function breakpoints).",
           );
         }
-        const result = await mgr.removeBreakpoint(args.file, args.line, undefined, timeoutMs);
+        const removeBreakpointFile = resolveToCwd(args.file, cwd);
+        const result = await mgr.removeBreakpoint(removeBreakpointFile, args.line, undefined, timeoutMs);
         return formatBreakpoints(result.sourcePath, result.breakpoints);
       }
       case "set_function_breakpoint": {
