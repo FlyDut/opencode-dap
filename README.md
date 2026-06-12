@@ -18,8 +18,10 @@ mkdir -p .opencode
 echo '{ "dependencies": { "@debugtalk/opencode-dap": "^0.1.0" } }' > .opencode/package.json
 bun install --cwd .opencode
 
-# 3. Create the tool and plugin files (see opencode Integration below)
-# 4. Start opencode and test
+# 3. Copy the template files into your project's .opencode/ directory
+cp -r node_modules/@debugtalk/opencode-dap/templates/* .opencode/
+
+# 4. Start opencode
 ```
 
 ## Standalone API
@@ -53,20 +55,26 @@ await mgr.terminate();
 
 ## opencode Integration
 
-The package is designed to work as an OpenCode custom tool. Two files are needed in your project's `.opencode/` directory:
+The package ships with ready-to-use templates in `templates/`. Copy them into your project's `.opencode/` directory:
 
-### `.opencode/shared/debug-session.ts`
+```bash
+cp -r node_modules/@debugtalk/opencode-dap/templates/* .opencode/
+```
 
-Shared singleton for the DAP session manager:
+This creates three files:
+
+### `templates/shared/debug-session.ts`
+
+Shared singleton for the DAP session manager. Copy to `.opencode/shared/debug-session.ts`.
 
 ```ts
 import { DapSessionManager } from "@debugtalk/opencode-dap";
 export const dapSessionManager = new DapSessionManager();
 ```
 
-### `.opencode/tools/debug.ts`
+### `templates/tools/debug.ts`
 
-The custom tool definition. See the [bundled tool template](https://github.com/debugtalk/opencode-dap/blob/main/templates/tools/debug.ts) for the full implementation (~500 lines with all 30 actions).
+The full custom tool definition with all 30 actions (~500 lines). Copy to `.opencode/tools/debug.ts`.
 
 A minimal version:
 
@@ -107,9 +115,9 @@ export default tool({
 });
 ```
 
-### `.opencode/plugins/debug-lifecycle.ts`
+### `templates/plugins/debug-lifecycle.ts`
 
-Auto-cleanup on session idle:
+Auto-cleanup plugin. Copy to `.opencode/plugins/debug-lifecycle.ts`.
 
 ```ts
 import type { Plugin } from "@opencode-ai/plugin";
