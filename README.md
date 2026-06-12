@@ -66,7 +66,7 @@ export const dapSessionManager = new DapSessionManager();
 
 ### `.opencode/tools/debug.ts`
 
-The custom tool definition. See the [bundled tool template](https://github.com/debugtalk/opencode-dap/blob/main/.opencode/tools/debug.ts) for the full implementation (~500 lines with all 30 actions).
+The custom tool definition. See the [bundled tool template](https://github.com/debugtalk/opencode-dap/blob/main/templates/tools/debug.ts) for the full implementation (~500 lines with all 30 actions).
 
 A minimal version:
 
