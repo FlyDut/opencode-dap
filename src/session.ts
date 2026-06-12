@@ -123,7 +123,7 @@ function logError(context: string, detail: Record<string, unknown>): void {
  * Race a promise against an AbortSignal. If the signal fires first, throw.
  */
 async function untilAborted<T>(signal: AbortSignal | undefined, promise: Promise<T>): Promise<T> {
-	if (!signal?.aborted) return promise;
+	if (!signal) return promise;
 	const aborted = new Promise<never>((_, reject) => {
 		const handler = () => {
 			const reason = signal?.reason;

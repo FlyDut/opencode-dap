@@ -201,7 +201,7 @@ export class DapClient {
 		this.cwd = cwd;
 		this.proc = proc;
 		this.#readable = options?.readable ?? (proc.stdout as ReadableStream<Uint8Array>);
-		this.#writeSink = options?.writeSink ?? proc.stdin;
+		this.#writeSink = options?.writeSink ?? (proc.stdin as DapWriteSink);
 		this.#socket = options?.socket;
 		let stderrResult = "";
 		this.#getStderr = async () => {
