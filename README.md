@@ -6,15 +6,39 @@ Lets AI coding agents debug programs via the Debug Adapter Protocol — supports
 
 ## Quick Start
 
-Add to your project's `opencode.json`:
+```bash
+opencode plugin @debugtalk/opencode-dap
+```
+
+Restart OpenCode. The `debug` tool is available with 30+ actions. Debug sessions are automatically cleaned up on session idle/deleted.
+
+### Upgrade
+
+```bash
+opencode plugin @debugtalk/opencode-dap --force
+```
+
+### Verify
+
+```bash
+grep "opencode-dap" ~/.local/share/opencode/log/opencode.log
+```
+
+Then in OpenCode, run `debug action=sessions` to confirm the tool is registered.
+
+### Manual install (not recommended)
+
+```bash
+npm install @debugtalk/opencode-dap --save-dev
+```
+
+Then add to `opencode.json`:
 
 ```json
 { "plugin": ["@debugtalk/opencode-dap"] }
 ```
 
-Restart OpenCode. The `debug` tool is available with all 30 actions. Debug sessions are automatically cleaned up on session idle/deleted.
-
-Install the debug adapters you need:
+### Install debug adapters
 
 ```bash
 pip install debugpy          # Python

@@ -1,18 +1,32 @@
 # Changelog
 
-## [Unreleased]
+## [0.2.0] — 2026-06-29
 
 ### Added
-- Initial release of `@debugtalk/opencode-dap`, ported from oh-my-pi's DAP implementation
-- Full DAP wire protocol client with stdio and socket transport
-- Session manager with launch/attach lifecycle, breakpoint management, step/continue/pause, variable inspection, memory read/write, and disassembly
-- Adapter resolution with auto-selection by file extension and project root markers
-- Bundled adapter catalog with 14 debug adapters: gdb, lldb-dap, codelldb, debugpy, dlv, js-debug-adapter, netcoredbg, kotlin-debug-adapter, rdbg, php-debug-adapter, bash-debug-adapter, dart-debug-adapter, flutter-debug-adapter, elixir-ls-debugger
-- OpenCode custom tool integration (`tools/debug.ts`) with 30 debug actions
-- OpenCode lifecycle plugin for auto-cleanup on session idle
-- Non-interactive environment injection for all spawned debugger processes
-- Race-condition-safe event subscription (subscribe before command send)
-- Serialized breakpoint mutations to prevent concurrent overwrites
-- Friendly error messages: `debugpy` missing module detection, adapter-not-found hints
-- Byte-aware output truncation (128KB ring buffer with multi-byte character safety)
-- Zero npm runtime dependencies — only Bun + Node.js built-in APIs
+
+- `docs/publish.md` — publish, install, upgrade, and verify workflow
+- `.npmrc` pinned to public npm registry
+- `publishConfig`, `engines`, npm metadata (`author`, `repository`, etc.)
+
+### Changed
+
+- `@opencode-ai/plugin` upgraded to `^1.17.11`
+- `package-lock.json` regenerated with public registry
+- `test` script normalized, `files` field expanded
+
+### Fixed
+
+- README and AGENTS updated with install/upgrade/verify instructions
+
+## [0.1.0] — 2026-06-13
+
+### Added
+
+- Initial release, ported from oh-my-pi's DAP implementation
+- Full DAP wire protocol client (stdio + socket)
+- Session manager with launch/attach, breakpoints, step control, variable inspection, memory I/O, disassembly
+- 14 bundled debug adapters covering ~18 languages
+- Adapter auto-selection by file extension and project root markers
+- OpenCode `debug` tool with 30 actions and session lifecycle auto-cleanup
+- Non-interactive environment injection, race-condition-safe event handling, serialized breakpoint mutations
+- Zero runtime dependencies (Bun + Node.js built-ins only)

@@ -1,7 +1,22 @@
 {
   "name": "@debugtalk/opencode-dap",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "DAP (Debug Adapter Protocol) client for OpenCode AI coding agent",
+  "license": "MIT",
+  "author": "debugtalk",
+  "homepage": "https://github.com/debugtalk/opencode-dap#readme",
+  "bugs": "https://github.com/debugtalk/opencode-dap/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/debugtalk/opencode-dap.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "engines": {
+    "bun": ">=1.3.14"
+  },
   "type": "module",
   "main": "src/index.ts",
   "exports": {
@@ -11,23 +26,25 @@
     "./config": "./src/config.ts"
   },
   "files": [
-    "src"
+    "src",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "check": "tsc --noEmit",
     "check:syntax": "bun --check src/client.ts src/config.ts src/session.ts src/types.ts src/non-interactive-env.ts src/plugin.ts src/index.ts tests/dap-launch-failures.test.ts tests/dap-config.test.ts tests/dap-write-sink-flush.typecheck.ts",
-    "test": "bun test"
+    "test": "bun test tests/"
   },
   "keywords": [
     "opencode",
     "dap",
     "debug",
     "debug-adapter-protocol",
-    "coding-agent"
+    "coding-agent",
+    "opencode-plugin"
   ],
-  "license": "MIT",
   "devDependencies": {
-    "@opencode-ai/plugin": "^1.17.4",
+    "@opencode-ai/plugin": "^1.17.11",
     "@types/node": "^25.9.3",
     "bun-types": "^1.3.1",
     "typescript": "^6.0.3"

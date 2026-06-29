@@ -3,11 +3,12 @@
 ## Commands
 
 ```bash
-npm run check          # tsc --noEmit (type check)
-npm run check:syntax   # bun --check (syntax check)
+npm run check && npm test     # pre-publish verification (type-check + tests)
+npm run check                 # tsc --noEmit (type check only)
+npm test                      # bun test tests/ (run all tests)
 ```
 
-Run both before committing. No build step — the package ships `.ts` source directly.
+Run `npm run check && npm test` before committing. No build step — the package ships `.ts` source directly.
 
 ## Architecture
 
@@ -31,8 +32,8 @@ src/
 - **No build**: Exports point to `.ts` source. Consumers must use Bun or `tsx`.
 - **`check:syntax` is hardcoded**: add new source files to the script in `package.json`.
 - **Dependencies are dev-only**: `typescript`, `@types/node`, `bun-types`, `@opencode-ai/plugin`. Runtime uses only Bun built-ins.
-- **Distribution**: published to npm, consumed as OpenCode plugin via `"plugin": ["@debugtalk/opencode-dap"]` in `opencode.json`.
+- **Distribution**: published to npm, consumed as OpenCode plugin via `"plugin": ["@debugtalk/opencode-dap"]` in `opencode.json`. Users install with `opencode plugin @debugtalk/opencode-dap` and upgrade with `--force`. See `docs/publish.md` for release steps.
 
 ## Testing
 
-No test suite yet. Manual verification: `npx tsc --noEmit && bun run check:syntax`.
+Verify before publishing: `npm run check && npm test`. See [Bun test docs](https://bun.sh/docs/cli/test) for test authoring.
