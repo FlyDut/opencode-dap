@@ -1,4 +1,11 @@
 import * as path from "node:path";
+/**
+ * @source  oh-my-pi packages/coding-agent/src/dap/config.ts
+ * @baseline 54d4a1f3a (2026-06-10)
+ * @style   adapt  — multi-source config loading removed; only DEFAULT_ADAPTERS
+ *          is used.  hasRootMarkers, resolveCommand, isRecord, normalizeCommandForCwd
+ *          are inlined (and exported where needed).
+ */
 import * as fs from "node:fs";
 import DEFAULTS from "./defaults.json" with { type: "json" };
 import type { DapAdapterConfig, DapResolvedAdapter } from "./types";

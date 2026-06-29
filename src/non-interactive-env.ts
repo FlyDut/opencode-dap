@@ -1,3 +1,9 @@
+/**
+ * @source  oh-my-pi packages/coding-agent/src/exec/non-interactive-env.ts
+ * @baseline 54d4a1f3a (2026-06-10)
+ * @style   adapt  — kept the static NON_INTERACTIVE_ENV constant;
+ *          removed buildNonInteractiveEnv() and Windows locale/UTF-8 runtime logic
+ */
 export const NON_INTERACTIVE_ENV: Readonly<Record<string, string>> = {
 	PAGER: "cat",
 	GIT_PAGER: "cat",

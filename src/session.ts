@@ -1,3 +1,9 @@
+/**
+ * @source  oh-my-pi packages/coding-agent/src/dap/session.ts
+ * @baseline 54d4a1f3a (2026-06-10)
+ * @style   adapt  — untilAborted/logError/logWarn inlined; clientID→"opencode";
+ *          DapSessionManager.dispose() added; cleanup timer uses setInterval+unref
+ */
 import * as path from "node:path";
 import { DapClient } from "./client";
 import { NON_INTERACTIVE_ENV } from "./non-interactive-env";

@@ -1,3 +1,8 @@
+/**
+ * @source  oh-my-pi packages/coding-agent/src/dap/types.ts
+ * @baseline 54d4a1f3a (2026-06-10)
+ * @style   copy  — only DapClientState.proc changed: ptree.ChildProcess → Bun.Subprocess
+ */
 export type DapMessage = DapRequestMessage | DapResponseMessage | DapEventMessage;
 export type DapSessionStatus = "launching" | "configuring" | "stopped" | "running" | "terminated";
 

@@ -1,3 +1,9 @@
+/**
+ * @source  oh-my-pi packages/coding-agent/src/dap/client.ts
+ * @baseline 54d4a1f3a (2026-06-10)
+ * @style   adapt  — Bun.spawn replaces ptree; chunk parsing replaces MessageFramer;
+ *          DapAbortError replaces ToolAbortError; logError/logWarn replace logger
+ */
 import * as fs from "node:fs/promises";
 import { NON_INTERACTIVE_ENV } from "./non-interactive-env";
 import type {
