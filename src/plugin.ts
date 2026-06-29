@@ -430,6 +430,7 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
     const mgr = getManager();
     const timeout = clampTimeout(args.timeout);
     const timeoutMs = timeout * 1000;
+    const timeoutSignal = AbortSignal.timeout(timeoutMs);
     const cwd = typeof args.cwd === "string" && args.cwd
       ? resolveToCwd(args.cwd, ctx.directory)
       : ctx.directory;
@@ -462,7 +463,7 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
         const programArgs = Array.isArray(args.args) ? (args.args as string[]) : undefined;
         const snapshot = await mgr.launch(
           { adapter, program, args: programArgs, cwd, extraLaunchArguments: extraLaunchArgs },
-          undefined,
+          timeoutSignal,
           timeoutMs,
         );
         return formatSessionSnapshot(snapshot).join("\n");
@@ -482,11 +483,11 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
           throw new Error(`No debug adapter available. Installed: ${getConfiguredAdapters(cwd)}`);
         }
         const host = typeof args.host === "string" ? args.host : undefined;
-        const snapshot = await mgr.attach({ adapter, cwd, pid, port, host }, undefined, timeoutMs);
+        const snapshot = await mgr.attach({ adapter, cwd, pid, port, host }, timeoutSignal, timeoutMs);
         return formatSessionSnapshot(snapshot).join("\n");
       }
       case "terminate": {
-        const snapshot = await mgr.terminate(undefined, timeoutMs);
+        const snapshot = await mgr.terminate(timeoutSignal, timeoutMs);
         if (!snapshot) return "No debug session to terminate.";
         return [...formatSessionSnapshot(snapshot), "Debug session terminated."].join("\n");
       }
@@ -506,7 +507,7 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
           const result = await mgr.setFunctionBreakpoint(
             args.function,
             typeof args.condition === "string" ? args.condition : undefined,
-            undefined,
+            timeoutSignal,
             timeoutMs,
           );
           return formatFunctionBreakpoints(result.breakpoints);
@@ -521,14 +522,14 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
           breakpointFile,
           args.line,
           typeof args.condition === "string" ? args.condition : undefined,
-          undefined,
+          timeoutSignal,
           timeoutMs,
         );
         return formatBreakpoints(result.sourcePath, result.breakpoints);
       }
       case "remove_breakpoint": {
         if (typeof args.function === "string" && args.function) {
-          const result = await mgr.removeFunctionBreakpoint(args.function, undefined, timeoutMs);
+          const result = await mgr.removeFunctionBreakpoint(args.function, timeoutSignal, timeoutMs);
           return formatFunctionBreakpoints(result.breakpoints);
         }
         if (typeof args.file !== "string" || typeof args.line !== "number") {
@@ -537,7 +538,7 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
           );
         }
         const removeBreakpointFile = resolveToCwd(args.file, cwd);
-        const result = await mgr.removeBreakpoint(removeBreakpointFile, args.line, undefined, timeoutMs);
+        const result = await mgr.removeBreakpoint(removeBreakpointFile, args.line, timeoutSignal, timeoutMs);
         return formatBreakpoints(result.sourcePath, result.breakpoints);
       }
       case "set_function_breakpoint": {
@@ -547,7 +548,7 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
         const result = await mgr.setFunctionBreakpoint(
           args.function,
           typeof args.condition === "string" ? args.condition : undefined,
-          undefined,
+          timeoutSignal,
           timeoutMs,
         );
         return formatFunctionBreakpoints(result.breakpoints);
@@ -556,7 +557,7 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
         if (typeof args.function !== "string" || !args.function) {
           throw new Error("'function' is required.");
         }
-        const result = await mgr.removeFunctionBreakpoint(args.function, undefined, timeoutMs);
+        const result = await mgr.removeFunctionBreakpoint(args.function, timeoutSignal, timeoutMs);
         return formatFunctionBreakpoints(result.breakpoints);
       }
       case "set_instruction_breakpoint": {
@@ -569,7 +570,7 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
           typeof args.offset === "number" ? args.offset : undefined,
           typeof args.condition === "string" ? args.condition : undefined,
           typeof args.hit_condition === "string" ? args.hit_condition : undefined,
-          undefined,
+          timeoutSignal,
           timeoutMs,
         );
         return formatInstructionBreakpoints(result.breakpoints);
@@ -596,7 +597,7 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
           args.name,
           typeof args.variable_ref === "number" ? args.variable_ref : undefined,
           typeof args.frame_id === "number" ? args.frame_id : undefined,
-          undefined,
+          timeoutSignal,
           timeoutMs,
         );
         return formatDataBreakpointInfo(result.info);
@@ -611,7 +612,7 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
           args.access_type,
           typeof args.condition === "string" ? args.condition : undefined,
           typeof args.hit_condition === "string" ? args.hit_condition : undefined,
-          undefined,
+          timeoutSignal,
           timeoutMs,
         );
         return formatDataBreakpoints(result.breakpoints);
@@ -621,29 +622,29 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
         if (typeof args.data_id !== "string" || !args.data_id) {
           throw new Error("'data_id' is required.");
         }
-        const result = await mgr.removeDataBreakpoint(args.data_id, undefined, timeoutMs);
+        const result = await mgr.removeDataBreakpoint(args.data_id, timeoutSignal, timeoutMs);
         return formatDataBreakpoints(result.breakpoints);
       }
 
       // ── Execution control ───────────────────────────────
       case "continue": {
-        const outcome = await mgr.continue(undefined, timeoutMs);
+        const outcome = await mgr.continue(timeoutSignal, timeoutMs);
         return buildOutcomeText(outcome, timeout, "Continue");
       }
       case "step_over": {
-        const outcome = await mgr.stepOver(undefined, timeoutMs);
+        const outcome = await mgr.stepOver(timeoutSignal, timeoutMs);
         return buildOutcomeText(outcome, timeout, "Step over");
       }
       case "step_in": {
-        const outcome = await mgr.stepIn(undefined, timeoutMs);
+        const outcome = await mgr.stepIn(timeoutSignal, timeoutMs);
         return buildOutcomeText(outcome, timeout, "Step in");
       }
       case "step_out": {
-        const outcome = await mgr.stepOut(undefined, timeoutMs);
+        const outcome = await mgr.stepOut(timeoutSignal, timeoutMs);
         return buildOutcomeText(outcome, timeout, "Step out");
       }
       case "pause": {
-        const snapshot = await mgr.pause(undefined, timeoutMs);
+        const snapshot = await mgr.pause(timeoutSignal, timeoutMs);
         return [...formatSessionSnapshot(snapshot), "Program paused."].join("\n");
       }
 
@@ -657,7 +658,7 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
           args.expression,
           evalCtx as "watch" | "repl" | "hover" | "clipboard" | "variables",
           typeof args.frame_id === "number" ? args.frame_id : undefined,
-          undefined,
+          timeoutSignal,
           timeoutMs,
         );
         return formatEvaluation(result.evaluation);
@@ -665,20 +666,20 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
       case "stack_trace": {
         const result = await mgr.stackTrace(
           typeof args.levels === "number" ? args.levels : undefined,
-          undefined,
+          timeoutSignal,
           timeoutMs,
         );
         const header = formatSessionSnapshot(result.snapshot).join("\n");
         return `${header}\n${formatStackFrames(result.stackFrames)}`;
       }
       case "threads": {
-        const result = await mgr.threads(undefined, timeoutMs);
+        const result = await mgr.threads(timeoutSignal, timeoutMs);
         return formatThreads(result.threads);
       }
       case "scopes": {
         const result = await mgr.scopes(
           typeof args.frame_id === "number" ? args.frame_id : undefined,
-          undefined,
+          timeoutSignal,
           timeoutMs,
         );
         return formatScopes(result.scopes);
@@ -693,7 +694,7 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
         if (variableRef === undefined) {
           throw new Error("'variable_ref' or 'scope_id' is required for variables.");
         }
-        const result = await mgr.variables(variableRef, undefined, timeoutMs);
+        const result = await mgr.variables(variableRef, timeoutSignal, timeoutMs);
         return formatVariables(result.variables);
       }
 
@@ -711,7 +712,7 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
           typeof args.offset === "number" ? args.offset : undefined,
           typeof args.instruction_offset === "number" ? args.instruction_offset : undefined,
           args.resolve_symbols,
-          undefined,
+          timeoutSignal,
           timeoutMs,
         );
         return formatDisassembly(result.instructions);
@@ -728,7 +729,7 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
           args.memory_reference,
           args.count,
           typeof args.offset === "number" ? args.offset : undefined,
-          undefined,
+          timeoutSignal,
           timeoutMs,
         );
         return formatMemoryRead(result.address, result.data, result.unreadableBytes);
@@ -746,7 +747,7 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
           args.data,
           typeof args.offset === "number" ? args.offset : undefined,
           args.allow_partial,
-          undefined,
+          timeoutSignal,
           timeoutMs,
         );
         return [
@@ -762,14 +763,14 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
         const result = await mgr.modules(
           typeof args.start_module === "number" ? args.start_module : undefined,
           typeof args.module_count === "number" ? args.module_count : undefined,
-          undefined,
+          timeoutSignal,
           timeoutMs,
         );
         return formatModules(result.modules);
       }
       case "loaded_sources": {
         requireCapability("supportsLoadedSourcesRequest", "loaded sources");
-        const result = await mgr.loadedSources(undefined, timeoutMs);
+        const result = await mgr.loadedSources(timeoutSignal, timeoutMs);
         return formatLoadedSources(result.sources);
       }
       case "custom_request": {
@@ -777,7 +778,7 @@ Execution actions (take care): launch, attach, set_breakpoint, remove_breakpoint
           throw new Error("'command' is required for custom_request.");
         }
         const customArgs = args.arguments as Record<string, unknown> | undefined;
-        const result = await mgr.customRequest(args.command, customArgs, undefined, timeoutMs);
+        const result = await mgr.customRequest(args.command, customArgs, timeoutSignal, timeoutMs);
         return formatCustomResponse(args.command, result.body);
       }
 

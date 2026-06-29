@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "check": "tsc --noEmit",
-    "check:syntax": "bun --check src/client.ts src/config.ts src/session.ts src/types.ts src/non-interactive-env.ts src/plugin.ts src/index.ts tests/dap-launch-failures.test.ts tests/dap-write-sink-flush.typecheck.ts",
+    "check:syntax": "bun --check src/client.ts src/config.ts src/session.ts src/types.ts src/non-interactive-env.ts src/plugin.ts src/index.ts tests/dap-launch-failures.test.ts tests/dap-config.test.ts tests/dap-write-sink-flush.typecheck.ts",
     "test": "bun test"
   },
   "keywords": [

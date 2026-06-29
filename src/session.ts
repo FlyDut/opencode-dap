@@ -321,7 +321,7 @@ export class DapSessionManager {
 				...(options.extraLaunchArguments ?? {}),
 				program: options.program,
 				cwd: options.cwd,
-				args: options.args,
+				...(options.args !== undefined ? { args: options.args } : {}),
 			};
 			const initialStopPromise = this.#prepareStopOutcome(
 				session,

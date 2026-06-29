@@ -59,6 +59,8 @@ class FakeDapClient {
   readonly #handlers = new Map<string, Set<DapEventHandler>>();
   #alive = true;
 
+  requests: Array<{ command: string; args?: unknown }> = [];
+
   constructor(
     readonly adapter: DapResolvedAdapter,
     readonly cwd: string,
@@ -69,6 +71,7 @@ class FakeDapClient {
       attachErrorDelayMs?: number;
       configurationDoneError?: string;
       rejectStopWaiters?: boolean;
+      stopAfterLaunch?: boolean;
     },
   ) {
     this.proc = {
@@ -90,7 +93,8 @@ class FakeDapClient {
     return { supportsConfigurationDoneRequest: true };
   }
 
-  async sendRequest(command: string): Promise<unknown> {
+  async sendRequest(command: string, args?: unknown): Promise<unknown> {
+    this.requests.push({ command, args });
     if (command === "launch" && this.options.launchError) {
       if (this.options.launchErrorDelayMs) await Bun.sleep(this.options.launchErrorDelayMs);
       throw new Error(this.options.launchError);
@@ -101,6 +105,9 @@ class FakeDapClient {
     }
     if (command === "configurationDone" && this.options.configurationDoneError) {
       throw new Error(this.options.configurationDoneError);
+    }
+    if (command === "launch" && this.options.stopAfterLaunch) {
+      queueMicrotask(() => this.#emit("stopped", { reason: "entry", threadId: 1 }));
     }
     return {};
   }
@@ -153,6 +160,21 @@ afterEach(() => {
 });
 
 describe("DAP launch failure handling", () => {
+  it("preserves adapter launchDefaults args when launch omits args", async () => {
+    const adapter: DapResolvedAdapter = {
+      ...TEST_ADAPTER,
+      launchDefaults: { request: "launch", args: ["--configured"], stopOnEntry: true },
+    };
+    const manager = new DapSessionManager();
+    const fake = new FakeDapClient(adapter, process.cwd(), { stopAfterLaunch: true });
+    spyOn(DapClient, "spawn").mockResolvedValue(fake as unknown as DapClient);
+
+    await manager.launch({ adapter, program: "/bin/echo", cwd: process.cwd() }, undefined, 10_000);
+
+    const launch = fake.requests.find(request => request.command === "launch");
+    expect(launch?.args).toMatchObject({ args: ["--configured"], program: "/bin/echo" });
+  });
+
   it("surfaces the launch failure when configurationDone also fails", async () => {
     const manager = new DapSessionManager();
     const fake = new FakeDapClient(TEST_ADAPTER, process.cwd(), {

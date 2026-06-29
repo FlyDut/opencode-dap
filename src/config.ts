@@ -128,10 +128,23 @@ export function getAdapterConfigs(): Record<string, DapAdapterConfig> {
 	return { ...DEFAULT_ADAPTERS };
 }
 
+export function normalizeCommandForCwd(command: string, cwd: string): string {
+	if (path.isAbsolute(command)) return command;
+	if (
+		command.startsWith("./") ||
+		command.startsWith("../") ||
+		command.startsWith(".\\") ||
+		command.startsWith("..\\")
+	) {
+		return path.resolve(cwd, command);
+	}
+	return command;
+}
+
 export function resolveAdapter(adapterName: string, cwd: string): DapResolvedAdapter | null {
 	const config = DEFAULT_ADAPTERS[adapterName];
 	if (!config) return null;
-	const resolvedCommand = resolveCommand(config.command, cwd);
+	const resolvedCommand = resolveCommand(normalizeCommandForCwd(config.command, cwd), cwd);
 	if (!resolvedCommand) return null;
 	return {
 		name: adapterName,
