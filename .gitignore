@@ -1,2 +1,12 @@
 node_modules/
-*.log
+dist/
+*.tsbuildinfo
+.env
+/js-debug/
+go-test/*
+gdb-test/*
+py-test/*
+js-test/*
+gdb-test-rs-cargo/*
+
+
