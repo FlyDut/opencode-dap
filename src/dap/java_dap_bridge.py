@@ -144,23 +144,14 @@ async def start_jdtls(project_dir: str) -> tuple[asyncio.subprocess.Process, Lsp
         java_major = 0
 
     project_hash = hashlib.sha256(project_dir.encode()).hexdigest()
-    lsp_workspace = os.path.expanduser(f"~/.cache/jdtls-workspace/{project_hash}")
-    dap_workspace = os.path.expanduser(f"~/.cache/jdtls-workspace-dap/{project_hash}")
-
-    if os.path.isdir(lsp_workspace) and not os.path.isdir(dap_workspace):
-        try:
-            import shutil
-            shutil.copytree(lsp_workspace, dap_workspace, symlinks=True,
-                          ignore=shutil.ignore_patterns("*.log", "*.index"))
-        except Exception:
-            pass
+    dap_workspace = os.path.expanduser(f"~/.cache/jdtls-workspace/{project_hash}")
 
     os.makedirs(dap_workspace, exist_ok=True)
 
     xms = os.environ.get("JDTLS_XMS", "128m")
     xmx = os.environ.get("JDTLS_XMX", "512m")
     metaspace = os.environ.get("JDTLS_METASPACE_SIZE", "128m")
-    max_metaspace = os.environ.get("JDTLS_MAX_METASPACE_SIZE", "256m")
+    max_metaspace = os.environ.get("JDTLS_MAX_METASPACE_SIZE", "")
 
     jvm_args = [
         java_bin,
@@ -173,17 +164,27 @@ async def start_jdtls(project_dir: str) -> tuple[asyncio.subprocess.Process, Lsp
         f"-Xms{xms}",
         f"-Xmx{xmx}",
         f"-XX:MetaspaceSize={metaspace}",
-        f"-XX:MaxMetaspaceSize={max_metaspace}",
-        "-XX:+UseZGC",
+        "-XX:+UseG1GC",
+        "-XX:MaxGCPauseMillis=150",
+        "-XX:InitiatingHeapOccupancyPercent=45"
+        "-XX:G1NewSizePercent=40",
+        "-XX:G1MaxNewSizePercent=60",
+        "-XX:+AlwaysPreTouch",
+        "-XX:+UseStringDeduplication",
+        "-XX:+OptimizeStringConcat",
+        "-XX:TieredStopAtLevel=4",
+        "-XX:CompileThreshold=1000",
         "-XX:+DisableExplicitGC",
         "-XX:TieredStopAtLevel=4",
         "-XX:CompileThreshold=1000",
-        "--add-modules=ALL-SYSTEM",
         "--add-opens", "java.base/java.util=ALL-UNNAMED",
         "--add-opens", "java.base/java.lang=ALL-UNNAMED",
         "--add-opens", "java.base/java.nio=ALL-UNNAMED",
         "--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED",
     ]
+
+    if max_metaspace != '':
+        jvm_args.append('-XX:MaxMetaspaceSize=' + max_metaspace)
 
     cds_archive = os.path.join(jdtls_home, "jdtls-shared.jsa")
     if os.path.isfile(cds_archive):
@@ -198,9 +199,7 @@ async def start_jdtls(project_dir: str) -> tuple[asyncio.subprocess.Process, Lsp
     if java_major >= 25:
         jvm_args.extend([
             "-XX:+UseDynamicNumberOfCompilerThreads",
-            "-XX:+UseDynamicNumberOfGCThreads",
-            "-XX:+ZUncommit",
-            "-XX:ZUncommitDelay=300",
+            "-XX:+UseDynamicNumberOfGCThreads"
         ])
 
     jvm_args.extend([
@@ -324,8 +323,6 @@ async def bridge_stdio_to_tcp(
 
 async def regenerate_cds(
     jdtls_home: str, java_bin: str, config_dir: str,
-async def regenerate_cds(
-    jdtls_home: str, java_bin: str, config_dir: str,
     launcher_jar: str, workspace: str, project_dir: str,
 ) -> None:
     """后台任务：生成 AppCDS 归档供后续启动使用。"""
@@ -335,13 +332,18 @@ async def regenerate_cds(
 
     try:
         proc = await asyncio.create_subprocess_exec(
-            java_bin, "-Xshare:off",
+            java_bin,
+            "-Xshare:off",
             f"-XX:DumpLoadedClassList={classlist}",
-            "-Xms256m", "-Xmx512m",
+            "-Xms256m",
+            "-Xmx512m",
             "-Dlog.level=OFF",
-            "-jar", launcher_jar,
-            "-configuration", config_dir,
-            "-data", tmp_ws,
+            "-jar",
+            launcher_jar,
+            "-configuration",
+            config_dir,
+            "-data",
+            tmp_ws,
             "-help",
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.DEVNULL,
@@ -355,13 +357,18 @@ async def regenerate_cds(
 
     try:
         proc = await asyncio.create_subprocess_exec(
-            java_bin, "-Xshare:dump",
+            java_bin,
+            "-Xshare:dump",
             f"-XX:SharedClassListFile={classlist}",
             f"-XX:SharedArchiveFile={archive}",
-            "-Xms512m", "-Xmx1g",
-            "-jar", launcher_jar,
-            "-configuration", config_dir,
-            "-data", tmp_ws,
+            "-Xms512m",
+            "-Xmx1g",
+            "-jar",
+            launcher_jar,
+            "-configuration",
+            config_dir,
+            "-data",
+            tmp_ws,
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.DEVNULL,
         )
