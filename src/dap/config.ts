@@ -11,6 +11,26 @@ const EXTENSIONLESS_DEBUGGER_ORDER: readonly string[] = ["gdb", "lldb-dap"];
 const JS_DEBUG_SERVER_ENV = "JS_DEBUG_DAP_SERVER";
 const DAP_PORT_ARGUMENT = "$" + "{port}";
 
+const CONFIG_FILENAME = "opencode-dap.json";
+
+// ── Config sanitization ──────────────────────────────────────────────────────
+
+function sanitizeConfig(raw: unknown): Record<string, unknown> {
+	if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
+	const r = raw as Record<string, unknown>;
+	if (!isRecord(r.adapters)) return { adapters: r };
+	return { adapters: r.adapters };
+}
+
+function loadConfigFile(filePath: string): Record<string, unknown> | undefined {
+	try {
+		const raw = fs.readFileSync(filePath, "utf-8");
+		return sanitizeConfig(JSON.parse(raw) as unknown);
+	} catch {
+		return undefined;
+	}
+}
+
 // ── Local utility reimplementations (replacing @oh-my-pi/pi-utils) ──────────
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -176,6 +196,7 @@ function normalizeAdapterConfig(config: unknown): DapAdapterConfig | null {
 		launchDefaults: normalizeObject(config.launchDefaults),
 		attachDefaults: normalizeObject(config.attachDefaults),
 		acceptsDirectoryProgram: config.acceptsDirectoryProgram === true,
+		env: isRecord(config.env) ? { ...config.env } as Record<string, string> : undefined,
 		...(connectMode ? { connectMode } : {}),
 	};
 }
@@ -222,6 +243,10 @@ function mergeAdapters(
 							isRecord(existing.attachDefaults) || isRecord(config.attachDefaults)
 								? { ...existing.attachDefaults, ...normalizeObject(config.attachDefaults) }
 								: undefined,
+						env:
+							isRecord(existing.env) || isRecord(config.env)
+								? { ...existing.env, ...normalizeObject(config.env) }
+								: undefined,
 					}
 				: config;
 		const normalized = normalizeAdapterConfig(candidate);
@@ -246,6 +271,7 @@ function getConfigSources(cwd: string): ConfigSource[] {
 	const filenames = ["dap.json", ".dap.json", "dap.yaml", ".dap.yaml", "dap.yml", ".dap.yml"];
 	const sources: ConfigSource[] = [];
 
+	// 旧路径（向后兼容，优先级最低）
 	for (const filename of filenames) {
 		sources.push(fileConfigSource(path.join(cwd, filename)));
 	}
@@ -273,6 +299,14 @@ function getConfigSources(cwd: string): ConfigSource[] {
 
 	for (const filename of filenames) {
 		sources.push(fileConfigSource(path.join(os.homedir(), filename)));
+	}
+
+	// 全局配置：~/.config/opencode/opencode-dap.json
+	sources.push(fileConfigSource(path.join(os.homedir(), ".config", "opencode", CONFIG_FILENAME)));
+
+	// 项目配置：<project>/opencode-dap.json（优先级最高）
+	if (cwd) {
+		sources.push(fileConfigSource(path.join(cwd, CONFIG_FILENAME)));
 	}
 
 	return sources;
@@ -347,6 +381,7 @@ function resolveDefaultJsDebugAdapter(
 		attachDefaults: config.attachDefaults ?? {},
 		connectMode: "tcp",
 		acceptsDirectoryProgram: config.acceptsDirectoryProgram === true,
+		env: config.env,
 	};
 }
 
@@ -381,6 +416,7 @@ function resolveAdapterFromConfig(
 		attachDefaults: config.attachDefaults ?? {},
 		connectMode: config.connectMode ?? "stdio",
 		acceptsDirectoryProgram: config.acceptsDirectoryProgram === true,
+		env: config.env,
 	};
 }
 

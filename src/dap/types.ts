@@ -488,6 +488,9 @@ export interface DapAdapterConfig {
 	 *  (e.g. dlv treats it as a Go package path). When false/undefined, the
 	 *  debug tool rejects directory programs upfront. */
 	acceptsDirectoryProgram?: boolean;
+	/** Environment variables to set when spawning the debug adapter.
+	 *  Merged over the process environment and NON_INTERACTIVE_ENV. */
+	env?: Record<string, string>;
 }
 
 export interface DapResolvedAdapter {
@@ -502,6 +505,7 @@ export interface DapResolvedAdapter {
 	attachDefaults: Record<string, unknown>;
 	connectMode: "stdio" | "socket" | "tcp";
 	acceptsDirectoryProgram: boolean;
+	env?: Record<string, string>;
 }
 
 export interface DapBreakpointRecord {

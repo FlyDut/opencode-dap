@@ -1062,13 +1062,7 @@ export class DapSessionManager {
 			session,
 			"evaluate",
 			{
-				// GDB DAP CLI fallback: single-letter expressions (i, a, s, n, v, …)
-				// are incorrectly parsed as GDB CLI command abbreviations.
-				// "print expr" avoids ambiguity — GDB treats the rest as an expression.
-				expression:
-					session.adapter.name === "gdb"
-						? `print ${expression}`
-						: expression,
+				expression,
 				context,
 				...(effectiveFrameId !== undefined ? { frameId: effectiveFrameId } : {}),
 			} satisfies DapEvaluateArguments,

@@ -1,0 +1,4 @@
+interface:
+  display_name: "dap-debug"
+  short_description: "For debugging with debug tool over the DAP protocol."
+  default_prompt: "Debug the program with DAP to locate the cause of the problem."

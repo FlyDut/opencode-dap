@@ -178,5 +178,9 @@ export const zh: typeof import("./en.js").en = {
 	},
 	debug_prompt: `调试器访问。优先于 bash 使用，用于程序状态、断点、单步执行或线程检查。
 同一时间只有一个活动会话。\`program\` 是目标路径，不是 shell 命令。
-目录需要支持目录能力的适配器（例如 \`dlv\`）。`,
+目录需要支持目录能力的适配器（例如 \`dlv\`）。
+详细使用指南请使用 \`dap-debug\` skill。`,
+	prompt: {
+		system_prompt: "详细的 DAP 调试器使用指南（包括断点、流程控制、状态检查等），请使用 `dap-debug` skill。",
+	},
 };

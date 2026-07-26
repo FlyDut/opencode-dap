@@ -505,6 +505,7 @@ export class DapClient {
     const env = {
       ...Bun.env,
       ...NON_INTERACTIVE_ENV,
+      ...adapter.env,
     };
     const [resolvedCommand, resolvedArgs] = detachedCommand(
       adapter.resolvedCommand,
@@ -598,6 +599,7 @@ export class DapClient {
       env: {
         ...Bun.env,
         ...NON_INTERACTIVE_ENV,
+        ...adapter.env,
       },
     });
     const proc = wrapBunSubprocess(raw);
@@ -638,6 +640,7 @@ export class DapClient {
     const env = {
       ...Bun.env,
       ...NON_INTERACTIVE_ENV,
+      ...adapter.env,
     };
     const timeoutMs = socketReadyTimeoutMs ?? SOCKET_READY_TIMEOUT_MS;
     const isLinux = process.platform === "linux";

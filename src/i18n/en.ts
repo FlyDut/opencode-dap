@@ -176,5 +176,9 @@ Notes
 	},
 	debug_prompt: `Debugger access. Prefer over bash for program state, breakpoints, stepping, or thread inspection.
 Only one active session at a time. \`program\` is a target path, not a shell command.
-Directories need a directory-capable adapter (e.g. \`dlv\`).`,
+Directories need a directory-capable adapter (e.g. \`dlv\`).
+For detailed usage guide, use the \`dap-debug\` skill.`,
+	prompt: {
+		system_prompt: "For detailed DAP debugger usage including breakpoints, flow control, and inspection, use the `dap-debug` skill.",
+	},
 };

@@ -1,0 +1,4 @@
+interface:
+  display_name: "dap-debug"
+  short_description: "使用 debug 工具通过 DAP 协议进行调试时使用"
+  default_prompt: "使用 dap 对程序进行调试，定位问题出现的原因"

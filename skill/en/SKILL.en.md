@@ -1,3 +1,10 @@
+---
+name: dap-debug
+description: "Use the debug tool for debugging via the DAP protocol. Covers full operation guidelines including launch/attach, breakpoint management, flow control (continue/step/pause), state inspection (threads/stack/variables/evaluate), and session management."
+---
+
+# Guide to Using the DAP Debug Tool
+
 Provides debugger access through the Debug Adapter Protocol (DAP).
 Use for launching or attaching debuggers, setting breakpoints, stepping through execution, inspecting threads/stack/variables, evaluating expressions, capturing output, and interrupting hung programs.
 
