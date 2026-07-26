@@ -11,6 +11,7 @@ import json
 import os
 import hashlib
 import signal
+import shlex
 import sys
 from pathlib import Path
 import platform
@@ -109,7 +110,7 @@ class LspClient:
 
 
 async def start_jdtls(project_dir: str) -> tuple[asyncio.subprocess.Process, LspClient]:
-    """直接启动精简的 JDTLS LSP 子进程。"""
+    """启动 JDTLS，复用 LSP 工作区并启用性能优化。"""
     jdtls_home = os.environ.get("JDTLS_HOME", os.path.expanduser("~/.local/bin/jdtls"))
     jdtls_home = os.path.expanduser(jdtls_home)
     if not os.path.isdir(jdtls_home):
@@ -117,6 +118,7 @@ async def start_jdtls(project_dir: str) -> tuple[asyncio.subprocess.Process, Lsp
 
     java_home = os.environ.get("JAVA_HOME", "")
     java_bin = os.environ.get("JAVA_BIN", os.path.join(java_home, "bin", "java") if java_home else "java")
+    java_bin = os.path.expanduser(java_bin)
 
     plugins_dir = os.path.join(jdtls_home, "plugins")
     launchers = sorted(Path(plugins_dir).glob("org.eclipse.equinox.launcher_*.jar"))
@@ -142,20 +144,40 @@ async def start_jdtls(project_dir: str) -> tuple[asyncio.subprocess.Process, Lsp
         java_major = 0
 
     project_hash = hashlib.sha256(project_dir.encode()).hexdigest()
+    lsp_workspace = os.path.expanduser(f"~/.cache/jdtls-workspace/{project_hash}")
     dap_workspace = os.path.expanduser(f"~/.cache/jdtls-workspace-dap/{project_hash}")
+
+    if os.path.isdir(lsp_workspace) and not os.path.isdir(dap_workspace):
+        try:
+            import shutil
+            shutil.copytree(lsp_workspace, dap_workspace, symlinks=True,
+                          ignore=shutil.ignore_patterns("*.log", "*.index"))
+        except Exception:
+            pass
+
     os.makedirs(dap_workspace, exist_ok=True)
+
+    xms = os.environ.get("JDTLS_XMS", "128m")
+    xmx = os.environ.get("JDTLS_XMX", "512m")
+    metaspace = os.environ.get("JDTLS_METASPACE_SIZE", "128m")
+    max_metaspace = os.environ.get("JDTLS_MAX_METASPACE_SIZE", "256m")
 
     jvm_args = [
         java_bin,
         "-Declipse.application=org.eclipse.jdt.ls.core.id1",
         "-Dosgi.bundles.defaultStartLevel=4",
         "-Declipse.product=org.eclipse.jdt.ls.core.product",
+        "-Dlog.protocol=false",
         "-Dlog.level=WARN",
         "-Dfile.encoding=UTF-8",
-        "-Xms256m",
-        "-Xmx2g",
+        f"-Xms{xms}",
+        f"-Xmx{xmx}",
+        f"-XX:MetaspaceSize={metaspace}",
+        f"-XX:MaxMetaspaceSize={max_metaspace}",
         "-XX:+UseZGC",
         "-XX:+DisableExplicitGC",
+        "-XX:TieredStopAtLevel=4",
+        "-XX:CompileThreshold=1000",
         "--add-modules=ALL-SYSTEM",
         "--add-opens", "java.base/java.util=ALL-UNNAMED",
         "--add-opens", "java.base/java.lang=ALL-UNNAMED",
@@ -165,9 +187,13 @@ async def start_jdtls(project_dir: str) -> tuple[asyncio.subprocess.Process, Lsp
 
     if java_major >= 24:
         jvm_args.append("-XX:+UseCompactObjectHeaders")
+        jvm_args.append("-Djdk.xml.maxGeneralEntitySizeLimit=0")
+        jvm_args.append("-Djdk.xml.totalEntitySizeLimit=0")
 
     if java_major >= 25:
         jvm_args.extend([
+            "-XX:+UseDynamicNumberOfCompilerThreads",
+            "-XX:+UseDynamicNumberOfGCThreads",
             "-XX:+ZUncommit",
             "-XX:ZUncommitDelay=300",
         ])
@@ -186,7 +212,6 @@ async def start_jdtls(project_dir: str) -> tuple[asyncio.subprocess.Process, Lsp
         cwd=project_dir,
     )
     return proc, LspClient(proc)
-
 
 async def init_jdtls(lsp: LspClient, project_dir: str) -> None:
     """完成 JDTLS LSP 初始化握手。"""
@@ -309,6 +334,10 @@ async def main() -> None:
             raise RuntimeError(
                 "JDTLS 初始化超时，请检查 JDTLS 是否正常启动"
             )
+
+        jdtls_wait = float(os.environ.get("JDTLS_IMPORT_WAIT", "15"))
+        if jdtls_wait > 0:
+            await asyncio.sleep(jdtls_wait)
 
         try:
             port = await asyncio.wait_for(

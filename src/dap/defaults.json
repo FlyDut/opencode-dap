@@ -123,7 +123,7 @@
 	},
 	"java-debug": {
 		"command": "python3",
-		"args": ["-u", "/home/lbf/.local/bin/java-dap-bridge.py"],
+		"args": ["-u", "$JDTLS_HOME/java_dap_bridge.py"],
 		"languages": ["java"],
 		"fileTypes": [".java"],
 		"rootMarkers": ["pom.xml", "build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts", ".project", ".classpath"],

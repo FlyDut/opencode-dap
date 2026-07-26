@@ -385,6 +385,9 @@ function resolveDefaultJsDebugAdapter(
 	};
 }
 
+function expandEnvVars(value: string): string {
+	return value.replace(/\$\{?(\w+)\}?/g, (_match, name) => process.env[name] ?? "");
+}
 function resolveAdapterFromConfig(
 	adapterName: string,
 	configs: Record<string, DapAdapterConfig>,
@@ -407,7 +410,7 @@ function resolveAdapterFromConfig(
 	return {
 		name: adapterName,
 		command: config.command,
-		args: config.args ?? [],
+		args: (config.args ?? []).map(expandEnvVars),
 		resolvedCommand,
 		languages: config.languages ?? [],
 		fileTypes: config.fileTypes ?? [],
@@ -624,6 +627,14 @@ export function resolveLaunchOverrides(
 		}
 		if (programKind === "file") {
 			return { mode: "exec" };
+		}
+	}
+	if (adapter.name === "java-debug") {
+		const ext = path.extname(program).toLowerCase();
+		if (ext === ".java") {
+			const mainClass = path.basename(program, ".java");
+			const classPaths = [path.dirname(program)];
+			return { mainClass, classPaths };
 		}
 	}
 	return {};
