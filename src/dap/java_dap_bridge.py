@@ -111,13 +111,13 @@ class LspClient:
 
 async def start_jdtls(project_dir: str) -> tuple[asyncio.subprocess.Process, LspClient]:
     """启动 JDTLS，复用 LSP 工作区并启用性能优化。"""
-    jdtls_home = os.environ.get("JDTLS_HOME", os.path.expanduser("~/.local/bin/jdtls"))
+    jdtls_home = os.environ.get("JDTLS_HOME", "")
     jdtls_home = os.path.expanduser(jdtls_home)
     if not os.path.isdir(jdtls_home):
         raise FileNotFoundError(f"JDTLS_HOME not found: {jdtls_home}")
 
     java_home = os.environ.get("JAVA_HOME", "")
-    java_bin = os.environ.get("JAVA_BIN", os.path.join(java_home, "bin", "java") if java_home else "java")
+    java_bin = os.path.join(java_home, "bin", "java") if java_home else "java"
     java_bin = os.path.expanduser(java_bin)
 
     plugins_dir = os.path.join(jdtls_home, "plugins")
@@ -184,6 +184,11 @@ async def start_jdtls(project_dir: str) -> tuple[asyncio.subprocess.Process, Lsp
         "--add-opens", "java.base/java.nio=ALL-UNNAMED",
         "--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED",
     ]
+
+    cds_archive = os.path.join(jdtls_home, "jdtls-shared.jsa")
+    if os.path.isfile(cds_archive):
+        jvm_args.append(f"-XX:SharedArchiveFile={cds_archive}")
+        jvm_args.append("-Xshare:auto")
 
     if java_major >= 24:
         jvm_args.append("-XX:+UseCompactObjectHeaders")
@@ -317,6 +322,63 @@ async def bridge_stdio_to_tcp(
         task.cancel()
 
 
+async def regenerate_cds(
+    jdtls_home: str, java_bin: str, config_dir: str,
+async def regenerate_cds(
+    jdtls_home: str, java_bin: str, config_dir: str,
+    launcher_jar: str, workspace: str, project_dir: str,
+) -> None:
+    """后台任务：生成 AppCDS 归档供后续启动使用。"""
+    classlist = os.path.join(jdtls_home, "jdtls-classes.lst")
+    archive = os.path.join(jdtls_home, "jdtls-shared.jsa")
+    tmp_ws = os.path.join(jdtls_home, "_cds_workspace")
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            java_bin, "-Xshare:off",
+            f"-XX:DumpLoadedClassList={classlist}",
+            "-Xms256m", "-Xmx512m",
+            "-Dlog.level=OFF",
+            "-jar", launcher_jar,
+            "-configuration", config_dir,
+            "-data", tmp_ws,
+            "-help",
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await asyncio.wait_for(proc.wait(), timeout=60)
+    except Exception:
+        return
+
+    if not (os.path.isfile(classlist) and os.path.getsize(classlist) > 0):
+        return
+
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            java_bin, "-Xshare:dump",
+            f"-XX:SharedClassListFile={classlist}",
+            f"-XX:SharedArchiveFile={archive}",
+            "-Xms512m", "-Xmx1g",
+            "-jar", launcher_jar,
+            "-configuration", config_dir,
+            "-data", tmp_ws,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        await asyncio.wait_for(proc.wait(), timeout=120)
+    except Exception:
+        try:
+            os.unlink(archive)
+        except OSError:
+            pass
+    finally:
+        try:
+            import shutil
+            shutil.rmtree(tmp_ws, ignore_errors=True)
+        except Exception:
+            pass
+
+
 async def main() -> None:
     project_dir = os.getcwd()
     proc, lsp = await start_jdtls(project_dir)
@@ -349,6 +411,20 @@ async def main() -> None:
                 "启动 DAP 调试会话超时，请确认 java-debug 插件已加载"
             )
 
+
+        if os.environ.get("NEED_REGEN_CDS") == "1":
+            jdtls_home = os.environ.get("JDTLS_HOME", os.path.expanduser("~/.local/bin/jdtls"))
+            java_home = os.environ.get("JAVA_HOME", "")
+            java_bin = os.environ.get("JAVA_BIN", os.path.join(java_home, "bin", "java") if java_home else "java")
+            plugins_dir = os.path.join(jdtls_home, "plugins")
+            launcher_jars = sorted(Path(plugins_dir).glob("org.eclipse.equinox.launcher_*.jar"))
+            config_dir = os.path.join(jdtls_home, "config_linux")
+            project_hash = hashlib.sha256(project_dir.encode()).hexdigest()
+            dap_ws = os.path.expanduser(f"~/.cache/jdtls-workspace-dap/{project_hash}")
+            if launcher_jars:
+                asyncio.create_task(
+                    regenerate_cds(str(jdtls_home), java_bin, config_dir, str(launcher_jars[-1]), dap_ws, project_dir)
+                )
         await bridge_stdio_to_tcp(DAP_HOST, port, proc)
 
     finally:

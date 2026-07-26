@@ -86,7 +86,10 @@ const debugSchema = {
   startModule: z.number().optional(),
   moduleCount: z.number().optional(),
   timeout: z.number().optional().describe(t("schema.timeout")),
-} satisfies z.ZodRawShape;
+  mainClass: z.string().optional().describe(t("schema.mainClass")),
+  projectName: z.string().optional().describe(t("schema.projectName")),
+  classPaths: z.array(z.string()).optional().describe(t("schema.classPaths")),
+};
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -187,6 +190,11 @@ export async function opencodeDapPlugin(_input: PluginInput) {
               const { adapter } = selection;
               validateLaunchProgram(program, commandCwd, programKind, adapter);
               const extraLaunchArguments = resolveLaunchOverrides(adapter, program, programKind);
+              if (adapter.name === "java-debug") {
+                if (args.mainClass) extraLaunchArguments.mainClass = args.mainClass;
+                if (args.projectName) extraLaunchArguments.projectName = args.projectName;
+                if (args.classPaths) extraLaunchArguments.classPaths = args.classPaths;
+              }
               const snapshot = await dapSessionManager.launch(
                 { adapter, program, args: args.args, cwd: commandCwd, extraLaunchArguments },
                 ctx.abort,
@@ -305,7 +313,7 @@ export async function opencodeDapPlugin(_input: PluginInput) {
                 program,
                 cwd: commandCwd,
                 ...(args.args !== undefined ? { args: args.args } : {}),
-              };
+} satisfies z.ZodRawShape;
               const lines = [
                 t("format.configure_launch_adapter", adapter.name),
                 t("format.configure_launch_command", adapter.resolvedCommand),

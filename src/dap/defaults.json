@@ -122,25 +122,19 @@
 		}
 	},
 	"java-debug": {
-		"command": "python3",
-		"args": ["-u", "$JDTLS_HOME/java_dap_bridge.py"],
+		"command": "python",
+		"args": ["-u", "$OPC_DAP_ROOT/src/dap/java_dap_bridge.py"],
 		"languages": ["java"],
 		"fileTypes": [".java"],
 		"rootMarkers": ["pom.xml", "build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts", ".project", ".classpath"],
 		"launchDefaults": {
 			"request": "launch",
-			"mainClass": "",
-			"projectRoot": ""
+        	"stopOnEntry": true
 		},
 		"attachDefaults": {
 			"request": "attach",
 			"hostName": "127.0.0.1",
 			"port": ""
-		},
-		"env": {
-			"JAVA_BIN": "/usr/lib/jvm/java-25-openjdk/bin/java",
-			"JDTLS_HOME": "/home/lbf/.local/bin/jdtls",
-			"DEBUG_PLUGIN_JAR": "/home/lbf/.local/bin/jdtls/com.microsoft.java.debug.plugin-0.53.2.jar"
 		}
 	}
 ,

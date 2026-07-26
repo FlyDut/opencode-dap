@@ -58,6 +58,16 @@ npm install @flydut/opencode-dap --save-dev
 | `flutter-debug-adapter` | Dart (Flutter) | `dart debug_adapter` | Flutter SDK |
 | `elixir-ls-debugger` | Elixir | `elixir-ls-debugger` | [GitHub](https://github.com/elixir-lsp/elixir-ls) |
 
+## 配置（dap.json）
+
+适配器配置从多个位置读取，按优先级合并（从低到高）：
+
+| 优先级 | 位置 | 作用域 |
+|--------|------|--------|
+| 最低 | 插件默认配置 (`defaults.json`) | 内置 |
+| — | `~/.config/opencode/opencode-dap.json` | **全局** — 所有项目 |
+| 最高 | `<项目>/dap.json`（或 `.opencode/dap.json`） | **项目** — 覆盖全局配置 |
+
 ## Java
 
 Java DAP 调试比较特殊——没有独立的调试适配器。Java 调试功能（[java-debug](https://github.com/microsoft/vscode-java-debug)）以 OSGi 插件的形式运行在 [Eclipse JDTLS](https://github.com/eclipse-jdtls/eclipse.jdt.ls) 内部。本插件内置了一个 Python 桥接脚本（`java_dap_bridge.py`），其工作流程为：
@@ -67,9 +77,9 @@ Java DAP 调试比较特殊——没有独立的调试适配器。Java 调试功
 3. 发送 `vscode.java.startDebugSession` 获取 DAP TCP 端口
 4. 将 stdin/stdout 与 DAP TCP 桥接，使 OpenCode 可以使用标准 DAP 协议通信
 
-**为什么需要独立JDTLS实例？** JDTLS 通过 stdio 通信——一条双向管道承载全部 LSP 消息。OpenCode 的 LSP 集成独占该管道，无法同时用于 DAP 调试。因此桥接脚本启动第二个 JDTLS 实例专用于 DAP，使用独立工作区 `~/.cache/jdtls-workspace-dap/`。为避免 Maven 项目重复导入，桥接脚本在首次启动时自动复制 LSP 工作区（`~/.cache/jdtls-workspace/`）。
+**为什么需要独立JDTLS实例？** Opencode JDTLS 通过 stdio 通信——一条双向管道承载全部 LSP 消息。OpenCode 的 LSP 集成独占该管道，无法同时用于 DAP 调试。因此桥接脚本启动第二个 JDTLS 实例专用于 DAP，使用独立工作区 `~/.cache/jdtls-workspace-dap/`。为避免 Maven 项目重复导入，桥接脚本在首次启动时自动复制 LSP 工作区（`~/.cache/jdtls-workspace/`）。
 
-> **推荐** —— 使用 [opencode-jdtls-launcher](https://github.com/FlyDut/opencode-jdtls-launcher) 管理 JDTLS 安装。其 JVM 参数针对 OpenCode 进行了优化，且 LSP 与 DAP 可共用同一工作区目录，无需复制。
+> **推荐** —— 使用 [opencode-jdtls-launcher](https://github.com/FlyDut/opencode-jdtls-launcher) 管理 JDTLS 安装。其 JVM 参数针对大型项目进行了优化，虽然 LSP 和 DAP 依然无法复用同一个JDTLS实例，但 LSP 与 DAP 可共用同一工作区目录，如果两者都开启NEED_REGEN_CDS，还可复用同一个CDS存档（要求JDTLS和JDK版本相同）。
 
 ### 前置依赖
 
@@ -81,29 +91,9 @@ Java DAP 调试比较特殊——没有独立的调试适配器。Java 调试功
 
 下载 JDTLS 后解压到某个目录（例如 `~/.local/share/jdtls/`）。调试插件 jar 放在同一目录或 `plugins/` 子目录下。
 
-### 安装桥接脚本
 
-本插件在源码中内置了 `java_dap_bridge.py`。由于插件安装位置因环境而异，需要手动将其复制到 JDTLS 目录下，适配器才能找到：
-
-```bash
-# 找到插件目录（通常在 node_modules 或 OpenCode 插件缓存下）
-# 然后复制：
-cp <插件目录>/src/dap/java_dap_bridge.py $JDTLS_HOME/
-```
-
-复制后，适配器通过 `$JDTLS_HOME/java_dap_bridge.py` 引用它。
-
-### 配置（dap.json）
-
-适配器配置从多个位置读取，按优先级合并（从低到高）：
-
-| 优先级 | 位置 | 作用域 |
-|--------|------|--------|
-| 最低 | 插件默认配置 (`defaults.json`) | 内置 |
-| — | `~/.config/opencode/opencode-dap.json` | **全局** — 所有项目 |
-| 最高 | `<项目>/dap.json`（或 `.opencode/dap.json`） | **项目** — 覆盖全局配置 |
-
-通常将共享设置（JAVA_BIN、JDTLS_HOME 等）放在全局配置中，将项目特定设置（mainClass、projectName、classPaths）放在各项目的 `dap.json` 中。
+JDTLS_HOME、DEBUG_PLUGIN_JAR 必须添加 ，我建议将它们放在全局配置中
+mainClass、projectName、classPaths 非必须，AI可以通过工具参数指定。但是如果不是临时文件，建议添加项目配置，减少AI犯错概率
 
 #### 全局配置 (`~/.config/opencode/opencode-dap.json`)
 
@@ -111,10 +101,7 @@ cp <插件目录>/src/dap/java_dap_bridge.py $JDTLS_HOME/
 {
   "adapters": {
     "java-debug": {
-      "command": "python3",
-      "args": ["-u", "$JDTLS_HOME/java_dap_bridge.py"],
       "env": {
-        "JAVA_BIN": "/path/to/java/bin/java",
         "JDTLS_HOME": "/path/to/jdtls",
         "DEBUG_PLUGIN_JAR": "$JDTLS_HOME/com.microsoft.java.debug.plugin-0.53.2.jar"
       }
@@ -123,9 +110,10 @@ cp <插件目录>/src/dap/java_dap_bridge.py $JDTLS_HOME/
 }
 ```
 
-#### 项目配置 (`<项目>/dap.json`)
+#### 项目配置 (`<项目根目录>/dap.json`)
 
 `command` 和 `args` 从全局配置继承。只写项目间不同的部分——`mainClass`、`projectName`、`classPaths` 以及可选覆盖：
+`projectName` 必须与 JDTLS 工作区中的模块名匹配。对于多模块 Maven 项目，使用对应模块的 artifactId。
 
 ```json
 {
@@ -133,6 +121,7 @@ cp <插件目录>/src/dap/java_dap_bridge.py $JDTLS_HOME/
     "java-debug": {
       "launchDefaults": {
         "mainClass": "com.example.Main",
+        "projectName": "artifactId",
         "classPaths": ["target/classes"]
       }
     }
@@ -142,19 +131,12 @@ cp <插件目录>/src/dap/java_dap_bridge.py $JDTLS_HOME/
 
 两份配置同时存在时，字段按深度合并：`launchDefaults`、`attachDefaults`、`env` 递归合并；其他字段直接覆盖。
 
-### Maven / Gradle 项目
+### 桥接器
 
-对于包含 `pom.xml` 或 `build.gradle` 的项目，设置 `projectName` 让适配器从构建工具自动解析完整 classpath：
+桥接器（`java_dap_bridge.py`）内置在插件中，通过 `$OPC_DAP_ROOT` 变量自动定位——无需手动复制。默认适配器配置已引用 `$OPC_DAP_ROOT/src/dap/java_dap_bridge.py`。
 
-```json
-"launchDefaults": {
-    "mainClass": "com.example.Main",
-    "projectName": "my-module",
-    "classPaths": ["target/classes"]
-}
-```
+如需覆盖路径（例如使用自定义桥接脚本），在 `dap.json` 中设置 `args` 即可。
 
-`projectName` 必须与 JDTLS 工作区中的模块名匹配。对于多模块 Maven 项目，使用对应模块的 artifactId。
 
 ### 环境变量
 
@@ -162,15 +144,14 @@ cp <插件目录>/src/dap/java_dap_bridge.py $JDTLS_HOME/
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `JDTLS_HOME` | `~/.local/bin/jdtls` | JDTLS 安装根目录 |
-| `JAVA_BIN` | `$JAVA_HOME/bin/java` 或 `java` | Java 可执行文件路径 |
-| `JAVA_HOME` | — | `JAVA_BIN` 的回退路径 |
+| `JDTLS_HOME` | — | JDTLS 安装根目录 |
+| `JAVA_HOME` | `java` | $JAVA_HOME/bin/java |
 | `DEBUG_PLUGIN_JAR` | — | `com.microsoft.java.debug.plugin-*.jar` 的路径（必填） |
-| `JDTLS_IMPORT_WAIT` | `15` | LSP 初始化后等待 Maven/Gradle 导入的秒数 |
+| `JDTLS_IMPORT_WAIT` | `15` | JDTLS 初始化后等待 Maven/Gradle 导入的秒数 |
 | `JDTLS_XMS` | `128m` | JVM 初始堆大小（DAP 比 LSP 需要的少得多） |
 | `JDTLS_XMX` | `512m` | JVM 最大堆大小 |
 | `JDTLS_METASPACE_SIZE` | `128m` | Metaspace 大小 |
 | `JDTLS_MAX_METASPACE_SIZE` | `256m` | 最大 Metaspace |
 | `DAP_HOST` | `127.0.0.1` | DAP 服务器绑定地址 |
 | `DAP_CONNECT_TIMEOUT` | `30` | TCP 连接超时（秒） |
-| `LSP_INIT_TIMEOUT` | `60` | LSP 初始化超时（秒） |
+| `LSP_INIT_TIMEOUT` | `60` | JDTLS 初始化超时（秒） |

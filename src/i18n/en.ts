@@ -18,7 +18,9 @@ export const en = {
 		memoryReference: "memory reference or address",
 		count: "bytes to read",
 		dataId: "data breakpoint id",
-		timeout: "per-request timeout seconds",
+		mainClass: "Java: fully-qualified main class (overrides launchDefaults)",
+		projectName: "Java: Maven/Gradle project name (e.g. artifactId)",
+		classPaths: "Java: classpath directories",
 	},
 	error: {
 		dir_not_executable:
@@ -177,8 +179,5 @@ Notes
 	debug_prompt: `Debugger access. Prefer over bash for program state, breakpoints, stepping, or thread inspection.
 Only one active session at a time. \`program\` is a target path, not a shell command.
 Directories need a directory-capable adapter (e.g. \`dlv\`).
-For detailed usage guide, use the \`dap-debug\` skill.`,
-	prompt: {
-		system_prompt: "For detailed DAP debugger usage including breakpoints, flow control, and inspection, use the `dap-debug` skill.",
-	},
+For detailed usage guide, use the \`dap-debug\` skill.`
 };

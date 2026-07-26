@@ -385,8 +385,14 @@ function resolveDefaultJsDebugAdapter(
 	};
 }
 
+const PLUGIN_ROOT = path.resolve(import.meta.dir, "../..");
+
 function expandEnvVars(value: string): string {
-	return value.replace(/\$\{?(\w+)\}?/g, (_match, name) => process.env[name] ?? "");
+	return value.replace(/\$\{?(\w+)\}?/g, (_match, name) => {
+		if (name === "OPC_DAP_ROOT") return PLUGIN_ROOT;
+		if (name === "OPC_DAP_SRC") return path.join(PLUGIN_ROOT, "src", "dap");
+		return process.env[name] ?? "";
+	});
 }
 function resolveAdapterFromConfig(
 	adapterName: string,
@@ -627,14 +633,6 @@ export function resolveLaunchOverrides(
 		}
 		if (programKind === "file") {
 			return { mode: "exec" };
-		}
-	}
-	if (adapter.name === "java-debug") {
-		const ext = path.extname(program).toLowerCase();
-		if (ext === ".java") {
-			const mainClass = path.basename(program, ".java");
-			const classPaths = [path.dirname(program)];
-			return { mainClass, classPaths };
 		}
 	}
 	return {};

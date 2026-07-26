@@ -18,7 +18,9 @@ export const zh: typeof import("./en.js").en = {
 		memoryReference: "内存引用或地址",
 		count: "待读取的字节数",
 		dataId: "数据断点 ID",
-		timeout: "每次请求的超时时间（秒）",
+		mainClass: "Java 全限定主类名（覆盖 launchDefaults）",
+		projectName: "Java Maven/Gradle 项目名（如 artifactId）",
+		classPaths: "Java classpath 目录列表",
 	},
 	error: {
 		dir_not_executable:
@@ -179,8 +181,5 @@ export const zh: typeof import("./en.js").en = {
 	debug_prompt: `调试器访问。优先于 bash 使用，用于程序状态、断点、单步执行或线程检查。
 同一时间只有一个活动会话。\`program\` 是目标路径，不是 shell 命令。
 目录需要支持目录能力的适配器（例如 \`dlv\`）。
-详细使用指南请使用 \`dap-debug\` skill。`,
-	prompt: {
-		system_prompt: "详细的 DAP 调试器使用指南（包括断点、流程控制、状态检查等），请使用 `dap-debug` skill。",
-	},
+详细使用指南请使用 \`dap-debug\` skill。`
 };

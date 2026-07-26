@@ -10,4 +10,5 @@ js-test/*
 java-test/*
 gdb-test-rs-cargo/*
 .idea
+dap.json
 
