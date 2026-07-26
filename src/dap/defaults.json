@@ -121,6 +121,29 @@
 			"request": "attach"
 		}
 	},
+	"java-debug": {
+		"command": "python3",
+		"args": ["-u", "/home/lbf/.local/bin/java-dap-bridge.py"],
+		"languages": ["java"],
+		"fileTypes": [".java"],
+		"rootMarkers": ["pom.xml", "build.gradle", "build.gradle.kts", "settings.gradle", "settings.gradle.kts", ".project", ".classpath"],
+		"launchDefaults": {
+			"request": "launch",
+			"mainClass": "",
+			"projectRoot": ""
+		},
+		"attachDefaults": {
+			"request": "attach",
+			"hostName": "127.0.0.1",
+			"port": ""
+		},
+		"env": {
+			"JAVA_BIN": "/usr/lib/jvm/java-25-openjdk/bin/java",
+			"JDTLS_HOME": "/home/lbf/.local/bin/jdtls",
+			"DEBUG_PLUGIN_JAR": "/home/lbf/.local/bin/jdtls/com.microsoft.java.debug.plugin-0.53.2.jar"
+		}
+	}
+,
 	"rdbg": {
 		"command": "rdbg",
 		"args": ["--open", "--command", "--"],
