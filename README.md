@@ -60,15 +60,17 @@ Then add to `opencode.json`:
 | `flutter-debug-adapter` | Dart (Flutter) | `dart debug_adapter` | Flutter SDK |
 | `elixir-ls-debugger` | Elixir | `elixir-ls-debugger` | [GitHub](https://github.com/elixir-lsp/elixir-ls) |
 
-## Prerequisites
+### Configuration (dap.json)
 
-| Component | Purpose | Download |
-|-----------|---------|----------|
-| Python ≥3.9 | Runs the bridge script |  |
-| Eclipse JDTLS | Language server + debug host | [download](https://download.eclipse.org/jdtls/milestones/) |
-| java-debug plugin | The DAP implementation inside JDTLS | [GitHub Releases](https://github.com/microsoft/vscode-java-debug/releases) |
+Adapter configuration is read from multiple locations, merged in priority order (lowest first):
 
-After downloading JDTLS, unpack it to a directory (e.g. `~/.local/share/jdtls/`). The debug plugin jar goes into the same directory.
+| Priority | Location | Scope |
+|----------|----------|-------|
+| lowest | plugin defaults (`defaults.json`) | built-in |
+| — | `~/.config/opencode/opencode-dap.json` | **global** — all projects |
+| highest | `<project>/dap.json` (or `.opencode/dap.json`) | **project** — overrides globals |
+
+Set shared settings (JAVA_BIN, JDTLS_HOME) in the global config, and project-specific settings (mainClass, projectName, classPaths) in each project's `dap.json`.
 
 ## Java
 
@@ -81,7 +83,7 @@ Java DAP debugging is special — there's no standalone debug adapter. Instead, 
 
 **Why a separate JDTLS instance?** Opencode JDTLS communicates over stdio — a single bidirectional pipe carrying LSP messages. OpenCode's LSP integration occupies that pipe exclusively. The bridge therefore launches a second JDTLS instance dedicated to DAP, with its own workspace at `~/.cache/jdtls-workspace-dap/`. To avoid re-importing Maven projects, the bridge automatically copies the LSP workspace (`~/.cache/jdtls-workspace/`) on first launch.
 
-> **Recommendation** — Use [opencode-jdtls-launcher](https://github.com/FlyDut/opencode-jdtls-launcher) to manage your JDTLS installation. Its JVM parameters are tuned for OpenCode, and both LSP and DAP can share the same workspace directory, eliminating the copy step entirely.
+> **Recommendation** — Use [opencode-jdtls-launcher](https://github.com/FlyDut/opencode-jdtls-launcher) to manage your JDTLS installation. Its JVM parameters are tuned for large projects. While LSP and DAP still cannot reuse the same JDTLS instance, both can share a common workspace directory. If both have `NEED_REGEN_CDS` enabled, they can also share the same CDS archive (requires matching JDTLS and JDK versions).
 
 
 ### Prerequisites
@@ -92,20 +94,9 @@ Java DAP debugging is special — there's no standalone debug adapter. Instead, 
 | Eclipse JDTLS | Language server + debug host | [download](https://download.eclipse.org/jdtls/milestones/) |
 | java-debug plugin | The DAP implementation inside JDTLS | [GitHub Releases](https://github.com/microsoft/vscode-java-debug/releases) |
 
-After downloading JDTLS, unpack it to a directory (e.g. `~/.local/share/jdtls/`). The debug plugin jar goes into the same directory.
+After downloading JDTLS, unpack it to a directory (e.g. `~/.local/share/jdtls/`). The debug plugin jar goes into the same directory or a `plugins/` subdirectory.
 
 `JDTLS_HOME` and `DEBUG_PLUGIN_JAR` are **required** — put them in your global config. `mainClass`, `projectName`, and `classPaths` are optional: the AI can pass them dynamically via tool parameters, but for non-throwaway projects, adding them to the project `dap.json` reduces the chance of mistakes.
-### Configuration (dap.json)
-
-Adapter configuration is read from multiple locations, merged in priority order (lowest first):
-
-| Priority | Location | Scope |
-|----------|----------|-------|
-| lowest | plugin defaults (`defaults.json`) | built-in |
-| — | `~/.config/opencode/opencode-dap.json` | **global** — all projects |
-| highest | `<project>/dap.json` (or `.opencode/dap.json`) | **project** — overrides globals |
-
-Set shared settings (JAVA_BIN, JDTLS_HOME) in the global config, and project-specific settings (mainClass, projectName, classPaths) in each project's `dap.json`.
 
 #### Global config (`~/.config/opencode/opencode-dap.json`)
 ```json
@@ -144,7 +135,7 @@ When both configs exist, fields are deep-merged: `launchDefaults`, `attachDefaul
 
 ### Bridge Script
 
-The bridge script (`java_dap_bridge.py`) ships inside this plugin and is located automatically via the `$OPC_DAP_ROOT` variable — no manual copying needed. The default adapter config already references it as `$OPC_DAP_ROOT/src/dap/java_dap_bridge.py`.
+The bridge script (`java_dap_bridge.py`) ships inside this plugin and is located automatically via the `$OPC_DAP_ROOT` variable. The default adapter config already references it as `$OPC_DAP_ROOT/src/dap/java_dap_bridge.py`.
 
 If you need to override the path (e.g. to use a custom bridge), set `args` in your `dap.json`.
 

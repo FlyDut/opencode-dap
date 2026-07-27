@@ -1214,10 +1214,14 @@ export class DapClient {
     if (this.#disposed) return;
     this.#disposed = true;
     try { this.#socket?.end(); } catch {}
+    const STDERR_MAX_LEN = 2000;
     let stderr = "";
     try {
       if (typeof this.proc.peekStderr === "function") {
-        stderr = this.proc.peekStderr().trim();
+        const raw = this.proc.peekStderr().trim();
+        stderr = raw.length > STDERR_MAX_LEN
+          ? raw.slice(0, STDERR_MAX_LEN) + "\n...(truncated)"
+          : raw;
       }
     } catch {
       /* best effort */

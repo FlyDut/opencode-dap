@@ -133,9 +133,9 @@ mainClass、projectName、classPaths 非必须，AI可以通过工具参数指�
 
 ### 桥接器
 
-桥接器（`java_dap_bridge.py`）内置在插件中，通过 `$OPC_DAP_ROOT` 变量自动定位——无需手动复制。默认适配器配置已引用 `$OPC_DAP_ROOT/src/dap/java_dap_bridge.py`。
+桥接器（`java_dap_bridge.py`）内置在插件中，通过 `$OPC_DAP_ROOT` 变量自动定位。默认适配器配置已引用 `$OPC_DAP_ROOT/src/dap/java_dap_bridge.py`。
 
-如需覆盖路径（例如使用自定义桥接脚本），在 `dap.json` 中设置 `args` 即可。
+如需覆盖路径（例如使用自定义桥接器），在 `dap.json` 中设置 `args` 即可。
 
 
 ### 环境变量
