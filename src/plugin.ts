@@ -6,6 +6,7 @@ import * as path from "node:path";
 import { dapSessionManager } from "./dap/session.js";
 import {
   getAvailableAdapters,
+  getAdapterConfigs,
   selectLaunchAdapter,
   selectAttachAdapter,
   resolveLaunchOverrides,
@@ -86,9 +87,6 @@ const debugSchema = {
   startModule: z.number().optional(),
   moduleCount: z.number().optional(),
   timeout: z.number().optional().describe(t("schema.timeout")),
-  mainClass: z.string().optional().describe(t("schema.mainClass")),
-  projectName: z.string().optional().describe(t("schema.projectName")),
-  classPaths: z.array(z.string()).optional().describe(t("schema.classPaths")),
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -161,14 +159,25 @@ async function resolveThreadIdForSession(
 
 // ── Plugin ─────────────────────────────────────────────────────────────────────
 
-export async function opencodeDapPlugin(_input: PluginInput) {
+export async function opencodeDapPlugin(input: PluginInput) {
   const debugDescription = t("debug_prompt");
+  const configs = getAdapterConfigs(input.directory);
+  const javaEnabled = !!configs["java-debug"];
+
+  const debugArgs = javaEnabled
+    ? {
+        ...debugSchema,
+        mainClass: z.string().optional().describe(t("schema.mainClass")),
+        projectName: z.string().optional().describe(t("schema.projectName")),
+        classPaths: z.array(z.string()).optional().describe(t("schema.classPaths")),
+      }
+    : debugSchema;
 
   return {
     tool: {
       debug: tool({
         description: debugDescription.trim(),
-        args: debugSchema,
+        args: debugArgs,
         async execute(args, ctx) {
           const timeoutSec: number = args.timeout ?? 30;
 
@@ -191,9 +200,10 @@ export async function opencodeDapPlugin(_input: PluginInput) {
               validateLaunchProgram(program, commandCwd, programKind, adapter);
               const extraLaunchArguments = resolveLaunchOverrides(adapter, program, programKind);
               if (adapter.name === "java-debug") {
-                if (args.mainClass) extraLaunchArguments.mainClass = args.mainClass;
-                if (args.projectName) extraLaunchArguments.projectName = args.projectName;
-                if (args.classPaths) extraLaunchArguments.classPaths = args.classPaths;
+                const jargs = args as { mainClass?: string; projectName?: string; classPaths?: string[] };
+                if (jargs.mainClass) extraLaunchArguments.mainClass = jargs.mainClass;
+                if (jargs.projectName) extraLaunchArguments.projectName = jargs.projectName;
+                if (jargs.classPaths) extraLaunchArguments.classPaths = jargs.classPaths;
               }
               const snapshot = await dapSessionManager.launch(
                 { adapter, program, args: args.args, cwd: commandCwd, extraLaunchArguments },

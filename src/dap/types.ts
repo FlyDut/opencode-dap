@@ -473,6 +473,7 @@ export interface DapClientState {
 }
 
 export interface DapAdapterConfig {
+	disabled?: boolean;
 	command: string;
 	args?: string[];
 	languages?: string[];

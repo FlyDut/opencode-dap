@@ -18,9 +18,9 @@ export const en = {
 		memoryReference: "memory reference or address",
 		count: "bytes to read",
 		dataId: "data breakpoint id",
-		mainClass: "Java: fully-qualified main class (overrides launchDefaults)",
+		mainClass: "Java: fully-qualified main class (e.g. com.xxx.Main)",
 		projectName: "Java: Maven/Gradle project name (e.g. artifactId)",
-		classPaths: "Java: classpath directories",
+		classPaths: "Java: absolute classpath directories",
 	},
 	error: {
 		dir_not_executable:

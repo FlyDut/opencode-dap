@@ -1,5 +1,6 @@
 {
 	"gdb": {
+		"disabled": false,
 		"command": "gdb",
 		"args": ["-i", "dap"],
 		"languages": ["c", "cpp", "rust"],
@@ -15,6 +16,7 @@
 		}
 	},
 	"lldb-dap": {
+		"disabled": false,
 		"command": "lldb-dap",
 		"args": [],
 		"languages": ["c", "cpp", "objc", "swift", "rust", "zig"],
@@ -29,6 +31,7 @@
 		}
 	},
 	"codelldb": {
+		"disabled": false,
 		"command": "codelldb",
 		"args": ["--port", "0"],
 		"languages": ["c", "cpp", "rust", "zig"],
@@ -43,6 +46,7 @@
 		}
 	},
 	"debugpy": {
+		"disabled": false,
 		"command": "python",
 		"args": ["-m", "debugpy.adapter"],
 		"languages": ["python"],
@@ -59,6 +63,7 @@
 		}
 	},
 	"dlv": {
+		"disabled": false,
 		"command": "dlv",
 		"args": ["dap"],
 		"connectMode": "socket",
@@ -77,6 +82,7 @@
 		}
 	},
 	"js-debug-adapter": {
+		"disabled": false,
 		"command": "js-debug-adapter",
 		"args": [],
 		"languages": ["javascript", "typescript"],
@@ -93,6 +99,7 @@
 		}
 	},
 	"netcoredbg": {
+		"disabled": false,
 		"command": "netcoredbg",
 		"args": ["--interpreter=vscode"],
 		"languages": ["csharp", "fsharp"],
@@ -107,6 +114,7 @@
 		}
 	},
 	"kotlin-debug-adapter": {
+		"disabled": false,
 		"command": "kotlin-debug-adapter",
 		"args": [],
 		"languages": ["kotlin"],
@@ -122,6 +130,7 @@
 		}
 	},
 	"java-debug": {
+		"disabled": false,
 		"command": "python",
 		"args": ["-u", "$OPC_DAP_ROOT/src/dap/java_dap_bridge.py"],
 		"languages": ["java"],
@@ -139,6 +148,7 @@
 	}
 ,
 	"rdbg": {
+		"disabled": false,
 		"command": "rdbg",
 		"args": ["--open", "--command", "--"],
 		"languages": ["ruby"],
@@ -154,6 +164,7 @@
 		}
 	},
 	"php-debug-adapter": {
+		"disabled": false,
 		"command": "php-debug-adapter",
 		"args": [],
 		"languages": ["php"],
@@ -168,6 +179,7 @@
 		}
 	},
 	"bash-debug-adapter": {
+		"disabled": false,
 		"command": "bash-debug-adapter",
 		"args": [],
 		"languages": ["bash", "shell"],
@@ -184,6 +196,7 @@
 		}
 	},
 	"dart-debug-adapter": {
+		"disabled": false,
 		"command": "dart",
 		"args": ["debug_adapter"],
 		"languages": ["dart"],
@@ -198,6 +211,7 @@
 		}
 	},
 	"flutter-debug-adapter": {
+		"disabled": false,
 		"command": "dart",
 		"args": ["debug_adapter", "--flutter-sdk-path", ""],
 		"languages": ["dart"],
@@ -211,6 +225,7 @@
 		}
 	},
 	"elixir-ls-debugger": {
+		"disabled": false,
 		"command": "elixir-ls-debugger",
 		"args": [],
 		"languages": ["elixir"],

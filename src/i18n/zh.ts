@@ -18,9 +18,9 @@ export const zh: typeof import("./en.js").en = {
 		memoryReference: "内存引用或地址",
 		count: "待读取的字节数",
 		dataId: "数据断点 ID",
-		mainClass: "Java 全限定主类名（覆盖 launchDefaults）",
+		mainClass: "Java 全限定主类名（如 com.xxx.Main)",
 		projectName: "Java Maven/Gradle 项目名（如 artifactId）",
-		classPaths: "Java classpath 目录列表",
+		classPaths: "Java classpath 绝对路径目录列表",
 	},
 	error: {
 		dir_not_executable:

@@ -188,6 +188,8 @@ function normalizeAdapterConfig(config: unknown): DapAdapterConfig | null {
 	if (typeof config.command !== "string" || config.command.length === 0) return null;
 	const connectMode = config.connectMode === "socket" || config.connectMode === "tcp" ? config.connectMode : undefined;
 	return {
+		disabled: config.disabled === true,
+
 		command: config.command,
 		args: normalizeStringArray(config.args),
 		languages: normalizeStringArray(config.languages),
@@ -319,6 +321,10 @@ function loadAdapterConfigs(cwd: string): Record<string, DapAdapterConfig> {
 		if (!parsed) continue;
 		adapters = mergeAdapters(adapters, parsed.adapters);
 	}
+	for (const [name, config] of Object.entries(adapters)) {
+		if (config.disabled) delete adapters[name];
+	}
+
 	return adapters;
 }
 
